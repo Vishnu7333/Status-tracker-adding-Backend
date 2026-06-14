@@ -1,0 +1,458 @@
+{
+  "info": {
+    "_postman_id": "069502b4-7bfa-4c40-bf5d-16f9f30cd0db",
+    "name": "Status Tracker API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Add Entry (Initial)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.data) {",
+              "    pm.collectionVariables.set(\"entryId\", jsonData.data.id);",
+              "    pm.collectionVariables.set(\"userId\", jsonData.data.userId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"project\": \"Security Suite\",\n  \"module\": \"Login\",\n  \"submodule\": \"OAuth Flow\",\n  \"total\": 10,\n  \"pass\": 7,\n  \"fail\": 2,\n  \"onhold\": 0,\n  \"pending\": 1,\n  \"comments\": \"First test run of OAuth module\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/entries",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "entries"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Update Same Day Entry",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201 or 200\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"project\": \"Security Suite\",\n  \"module\": \"Login\",\n  \"submodule\": \"OAuth Flow\",\n  \"total\": 5,\n  \"pass\": 3,\n  \"fail\": 1,\n  \"onhold\": 0,\n  \"pending\": 1,\n  \"comments\": \"Incremental test run validation\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/entries",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "entries"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Get My Entries",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/entries/mine",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "entries",
+            "mine"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get My Summary",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/entries/summary/mine",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "entries",
+            "summary",
+            "mine"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Delete My Entry",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/entries/{{entryId}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "entries",
+            "{{entryId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. Admin Get All Entries",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/admin/entries",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "admin",
+            "entries"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. Admin Get All Users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/admin/users",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "admin",
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. Admin Get Per-User Summary",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/admin/summary/per-user",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "admin",
+            "summary",
+            "per-user"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9. Admin Update User Role",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-User-Email",
+            "value": "john.doe@oracle.com",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "John Doe",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"role\": \"ADMIN\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/admin/users/{{userId}}/role",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "admin",
+            "users",
+            "{{userId}}",
+            "role"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "entryId",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    }
+  ]
+}

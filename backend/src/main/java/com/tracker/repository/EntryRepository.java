@@ -1,0 +1,20 @@
+package com.tracker.repository;
+
+import com.tracker.entity.Entry;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface EntryRepository extends JpaRepository<Entry, UUID> {
+
+    List<Entry> findByUserIdOrderByEntryDateDesc(UUID userId);
+
+    Optional<Entry> findByUserIdAndSubmoduleAndEntryDate(UUID userId, String submodule, LocalDate date);
+
+    List<Entry> findAllByOrderByEntryDateDesc();
+
+    List<Entry> findByUserId(UUID userId);
+}
