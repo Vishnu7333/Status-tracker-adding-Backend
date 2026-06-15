@@ -14,7 +14,7 @@ function checkAdminSession() {
   }
   
   const emailLower = email.toLowerCase();
-  const isAdmin = emailLower.includes('admin') || emailLower.includes('vishnu') || emailLower === 'john.doe@oracle.com';
+  const isAdmin = emailLower === 'vvnair7333@gmail.com';
   if (!isAdmin) {
     window.location.href = 'index.html';
   }
