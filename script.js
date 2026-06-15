@@ -22,12 +22,14 @@ const exportExcelButton = document.getElementById('export-excel');
 const exportImageButton = document.getElementById('export-image');
 
 const records = [];
+const historyRecords = [];
 const BASE_URL = 'https://status-tracker-api.onrender.com';
 const API_HEADERS = {
   'Content-Type': 'application/json',
   'X-User-Email': 'john.doe@oracle.com',
   'X-User-Name': 'John Doe'
 };
+const historyTableBody = document.querySelector('#history-table tbody');
 
 // Add real-time validation for alphabets only in Project Name, Module, and Submodule
 function validateAlphabetsOnly(input) {
@@ -213,6 +215,32 @@ function createRow(record, index) {
   return tr;
 }
 
+function groupByProjectAndModule(recordList) {
+  return recordList.reduce((groups, record) => {
+    const proj = record.project || 'Untitled Customer';
+    const mod = record.module || 'General';
+    if (!groups[proj]) {
+      groups[proj] = {};
+    }
+    if (!groups[proj][mod]) {
+      groups[proj][mod] = [];
+    }
+    groups[proj][mod].push(record);
+    return groups;
+  }, {});
+}
+
+function createProjectHeaderRow(projectName) {
+  const tr = document.createElement('tr');
+  tr.className = 'project-header-row-ui';
+  tr.innerHTML = `
+    <td colspan="10">
+      <strong>Customer: ${projectName}</strong>
+    </td>
+  `;
+  return tr;
+}
+
 function updateTable() {
   if (!testcaseTableBody) return;
   testcaseTableBody.innerHTML = '';
@@ -224,30 +252,28 @@ function updateTable() {
     return;
   }
 
-  const groupedRecords = groupByModule();
-  Object.entries(groupedRecords).forEach(([moduleName, moduleRecords]) => {
-    const moduleSummary = moduleRecords.reduce(
-      (summary, record) => {
-        summary.total += record.total;
-        summary.pass += record.pass;
-        summary.fail += record.fail;
-        summary.onhold += record.onhold;
-        summary.pending += record.pending;
-        return summary;
-      },
-      {
-        total: 0,
-        pass: 0,
-        fail: 0,
-        onhold: 0,
-        pending: 0,
-      },
-    );
+  const grouped = groupByProjectAndModule(records);
+  Object.entries(grouped).forEach(([projectName, modules]) => {
+    testcaseTableBody.appendChild(createProjectHeaderRow(projectName));
 
-    testcaseTableBody.appendChild(createModuleHeaderRow(moduleName, moduleSummary));
-    moduleRecords.forEach((record) => {
-      const index = records.indexOf(record);
-      testcaseTableBody.appendChild(createRow(record, index));
+    Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
+      const moduleSummary = moduleRecords.reduce(
+        (summary, record) => {
+          summary.total += record.total;
+          summary.pass += record.pass;
+          summary.fail += record.fail;
+          summary.onhold += record.onhold;
+          summary.pending += record.pending;
+          return summary;
+        },
+        { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 }
+      );
+
+      testcaseTableBody.appendChild(createModuleHeaderRow(moduleName, moduleSummary));
+      moduleRecords.forEach((record) => {
+        const index = records.indexOf(record);
+        testcaseTableBody.appendChild(createRow(record, index));
+      });
     });
   });
 }
@@ -284,6 +310,11 @@ function updateSummaryUI(summary) {
   if (pendingCountEl) pendingCountEl.textContent = summary.pending ?? 0;
 }
 
+function updateDraftSummary() {
+  const summary = summarize();
+  updateSummaryUI(summary);
+}
+
 async function parseTestcaseForm(event) {
   event.preventDefault();
 
@@ -291,7 +322,7 @@ async function parseTestcaseForm(event) {
   const projectName = projectNameInput ? projectNameInput.value.trim() : '';
   if (!projectName) {
     if (projectNameInput) {
-      setFieldError(projectNameInput, 'Project Name is required.');
+      setFieldError(projectNameInput, 'Customer Name is required.');
       scrollToField(projectNameInput);
     }
     return;
@@ -384,6 +415,15 @@ async function parseTestcaseForm(event) {
     return;
   }
 
+  // Validate Total is greater than zero
+  if (values.total === 0) {
+    if (totalCountInput) {
+      setFieldError(totalCountInput, 'Add some value');
+      scrollToField(totalCountInput);
+    }
+    return;
+  }
+
   countFields.forEach((fieldName) => {
     values[fieldName] = toCount(values[fieldName]);
   });
@@ -406,32 +446,20 @@ async function parseTestcaseForm(event) {
     return;
   }
 
-  try {
-    const response = await fetch(`${BASE_URL}/api/entries`, {
-      method: 'POST',
-      headers: API_HEADERS,
-      body: JSON.stringify(record)
-    });
-    const result = await response.json();
-    if (result.success) {
-      clearFormError();
-      if (moduleInput) moduleInput.value = '';
-      if (submoduleInput) submoduleInput.value = '';
-      if (totalCountInput) totalCountInput.value = '';
-      if (passCountInput) passCountInput.value = '';
-      if (failCountInput) failCountInput.value = '';
-      if (onholdCountInput) onholdCountInput.value = '';
-      if (pendingCountInput) pendingCountInput.value = '';
-      if (commentInput) commentInput.value = '';
+  // Add locally to draft workspace instead of hitting backend immediately
+  records.push(record);
+  updateTable();
+  updateDraftSummary();
 
-      await refreshDashboard();
-    } else {
-      setFormError(result.message || 'Failed to submit entry.');
-    }
-  } catch (error) {
-    console.error('Error submitting entry:', error);
-    setFormError('Error communicating with server.');
-  }
+  // Clear submodule specific inputs
+  if (moduleInput) moduleInput.value = '';
+  if (submoduleInput) submoduleInput.value = '';
+  if (totalCountInput) totalCountInput.value = '';
+  if (passCountInput) passCountInput.value = '';
+  if (failCountInput) failCountInput.value = '';
+  if (onholdCountInput) onholdCountInput.value = '';
+  if (pendingCountInput) pendingCountInput.value = '';
+  if (commentInput) commentInput.value = '';
 }
 
 
@@ -528,49 +556,55 @@ function createImageReport() {
     row.appendChild(cell);
     tbody.appendChild(row);
   } else {
-    Object.entries(groupByModule()).forEach(([moduleName, moduleRecords]) => {
-      const moduleSummary = moduleRecords.reduce(
-        (accumulator, record) => {
-          accumulator.total += record.total;
-          accumulator.pass += record.pass;
-          accumulator.fail += record.fail;
-          accumulator.onhold += record.onhold;
-          accumulator.pending += record.pending;
-          return accumulator;
-        },
-        { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 },
-      );
+    Object.entries(groupByProjectAndModule(records)).forEach(([projectName, modules]) => {
+      const projectRow = document.createElement('tr');
+      projectRow.innerHTML = `<td colspan="9" style="background: #e2efda; color: #375623; font-weight: 800; padding: 0.7rem;">Customer: ${projectName}</td>`;
+      tbody.appendChild(projectRow);
 
-      const moduleRow = document.createElement('tr');
-      moduleRow.className = 'image-report-module-row';
-      const moduleCell = document.createElement('td');
-      moduleCell.colSpan = 9;
-      moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | Status: ${getModuleStatus(moduleSummary)}`;
-      moduleRow.appendChild(moduleCell);
-      tbody.appendChild(moduleRow);
+      Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
+        const moduleSummary = moduleRecords.reduce(
+          (accumulator, record) => {
+            accumulator.total += record.total;
+            accumulator.pass += record.pass;
+            accumulator.fail += record.fail;
+            accumulator.onhold += record.onhold;
+            accumulator.pending += record.pending;
+            return accumulator;
+          },
+          { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 },
+        );
 
-      moduleRecords.forEach((record, recordIndex) => {
-        const row = document.createElement('tr');
-
+        const moduleRow = document.createElement('tr');
+        moduleRow.className = 'image-report-module-row';
         const moduleCell = document.createElement('td');
-        moduleCell.textContent = recordIndex === 0 ? record.module : '';
-        row.appendChild(moduleCell);
+        moduleCell.colSpan = 9;
+        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | Status: ${getModuleStatus(moduleSummary)}`;
+        moduleRow.appendChild(moduleCell);
+        tbody.appendChild(moduleRow);
 
-        [
-          record.submodule,
-          record.total,
-          record.pass,
-          record.fail,
-          record.onhold,
-          record.pending,
-          getStatus(record),
-          record.comments || '-',
-        ].forEach((value) => {
-          const cell = document.createElement('td');
-          cell.textContent = value;
-          row.appendChild(cell);
+        moduleRecords.forEach((record, recordIndex) => {
+          const row = document.createElement('tr');
+
+          const moduleCell = document.createElement('td');
+          moduleCell.textContent = recordIndex === 0 ? record.module : '';
+          row.appendChild(moduleCell);
+
+          [
+            record.submodule,
+            record.total,
+            record.pass,
+            record.fail,
+            record.onhold,
+            record.pending,
+            getStatus(record),
+            record.comments || '-',
+          ].forEach((value) => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+          });
+          tbody.appendChild(row);
         });
-        tbody.appendChild(row);
       });
     });
   }
@@ -852,38 +886,127 @@ async function downloadExcel() {
   }
 }
 
-async function removeRecord(event) {
+function removeDraftRecord(event) {
   const button = event.target.closest('.remove-button');
+  if (!button) {
+    return;
+  }
+
+  const index = parseInt(button.dataset.index, 10);
+  if (!isNaN(index) && index >= 0 && index < records.length) {
+    records.splice(index, 1);
+    updateTable();
+    updateDraftSummary();
+  }
+}
+
+function createHistoryRow(record) {
+  const status = getStatus(record);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><strong>${record.project || '-'}</strong></td>
+    <td>${record.module}</td>
+    <td>${record.submodule}</td>
+    <td>${record.total}</td>
+    <td class="status-pass">${record.pass}</td>
+    <td class="status-fail">${record.fail}</td>
+    <td class="status-onhold">${record.onhold}</td>
+    <td class="status-pending">${record.pending}</td>
+    <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
+    <td class="comment-cell">${record.comments || '-'}</td>
+    <td>
+      <button class="remove-history-button" data-id="${record.id}" aria-label="Remove record from database">
+        <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
+          <path d="M3 6h18" />
+          <path d="M8 6V4h8v2" />
+          <path d="M19 6l-1 14H6L5 6" />
+          <path d="M10 11v5" />
+          <path d="M14 11v5" />
+        </svg>
+      </button>
+    </td>
+  `;
+  return tr;
+}
+
+function updateHistoryTable() {
+  if (!historyTableBody) return;
+  historyTableBody.innerHTML = '';
+
+  if (!historyRecords.length) {
+    const emptyRow = document.createElement('tr');
+    emptyRow.innerHTML = '<td colspan="11" class="empty-state">No saved entries in the database history.</td>';
+    historyTableBody.appendChild(emptyRow);
+    return;
+  }
+
+  const grouped = groupByProjectAndModule(historyRecords);
+  Object.entries(grouped).forEach(([projectName, modules]) => {
+    const projectHeader = document.createElement('tr');
+    projectHeader.className = 'project-header-row-ui';
+    projectHeader.innerHTML = `<td colspan="11"><strong>Customer: ${projectName}</strong></td>`;
+    historyTableBody.appendChild(projectHeader);
+
+    Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
+      const moduleSummary = moduleRecords.reduce(
+        (summary, record) => {
+          summary.total += record.total;
+          summary.pass += record.pass;
+          summary.fail += record.fail;
+          summary.onhold += record.onhold;
+          summary.pending += record.pending;
+          return summary;
+        },
+        { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 }
+      );
+
+      const moduleHeader = document.createElement('tr');
+      moduleHeader.className = 'module-header-row';
+      const status = getModuleStatus(moduleSummary);
+      moduleHeader.innerHTML = `
+        <td colspan="11">
+          <strong>${moduleName}</strong>
+          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | Status: ${status}</span>
+        </td>
+      `;
+      historyTableBody.appendChild(moduleHeader);
+
+      moduleRecords.forEach((record) => {
+        historyTableBody.appendChild(createHistoryRow(record));
+      });
+    });
+  });
+}
+
+async function removeHistoryRecord(event) {
+  const button = event.target.closest('.remove-history-button');
   if (!button) {
     return;
   }
 
   const id = button.dataset.id;
   if (id) {
-    try {
-      const response = await fetch(`${BASE_URL}/api/entries/${id}`, {
-        method: 'DELETE',
-        headers: API_HEADERS
-      });
-      const result = await response.json();
-      if (result.success) {
-        await refreshDashboard();
-      } else {
-        setFormError(result.message || 'Failed to delete record.');
+    if (confirm('Are you sure you want to permanently delete this record from the database?')) {
+      try {
+        const response = await fetch(`${BASE_URL}/api/entries/${id}`, {
+          method: 'DELETE',
+          headers: API_HEADERS
+        });
+        const result = await response.json();
+        if (result.success) {
+          await fetchMyHistory();
+        } else {
+          setFormError(result.message || 'Failed to delete record.');
+        }
+      } catch (error) {
+        console.error('Error deleting record:', error);
+        setFormError('Error communicating with server.');
       }
-    } catch (error) {
-      console.error('Error deleting record:', error);
-      setFormError('Error communicating with server.');
     }
   }
 }
 
-async function refreshDashboard() {
-  await fetchMyEntries();
-  await fetchMySummary();
-}
-
-async function fetchMyEntries() {
+async function fetchMyHistory() {
   try {
     const response = await fetch(`${BASE_URL}/api/entries/mine`, {
       method: 'GET',
@@ -891,58 +1014,113 @@ async function fetchMyEntries() {
     });
     const result = await response.json();
     if (result && result.success && result.data) {
-      records.length = 0;
-      records.push(...result.data);
-      if (result.data.length > 0) {
-        const projectName = result.data[0].project;
-        if (projectNameInput) projectNameInput.value = projectName;
-        if (projectDisplay) projectDisplay.textContent = projectName;
-        document.title = `${projectName} - Module Status Tracker`;
-      }
+      historyRecords.length = 0;
+      historyRecords.push(...result.data);
     } else {
-      records.length = 0;
+      historyRecords.length = 0;
     }
   } catch (error) {
-    console.error('Error fetching mine entries:', error);
-    records.length = 0;
+    console.error('Error fetching database history:', error);
+    historyRecords.length = 0;
   }
-  updateTable();
+  updateHistoryTable();
 }
 
-async function fetchMySummary() {
+async function completeProcess() {
+  if (records.length === 0) {
+    setFormError('Please add at least one submodule before completing the process.');
+    return;
+  }
+
+  const completeBtn = document.getElementById('complete-process');
+  if (completeBtn) {
+    completeBtn.disabled = true;
+    completeBtn.textContent = 'Saving...';
+  }
+
+  clearFormError();
+  clearAllFieldErrors();
+
   try {
-    const response = await fetch(`${BASE_URL}/api/entries/summary/mine`, {
-      method: 'GET',
-      headers: API_HEADERS
+    const savePromises = records.map(async (record) => {
+      const response = await fetch(`${BASE_URL}/api/entries`, {
+        method: 'POST',
+        headers: API_HEADERS,
+        body: JSON.stringify(record)
+      });
+      return response.json();
     });
-    const result = await response.json();
-    if (result.success && result.data) {
-      updateSummaryUI(result.data);
+
+    const results = await Promise.all(savePromises);
+    const failed = results.filter(res => !res.success);
+
+    if (failed.length > 0) {
+      setFormError('Failed to save some entries. Please try again.');
+    } else {
+      records.length = 0;
+      updateTable();
+      updateDraftSummary();
+
+      if (projectNameInput) {
+        projectNameInput.value = '';
+        if (projectDisplay) projectDisplay.textContent = 'Untitled Customer';
+      }
+      document.title = 'Module Status Tracker';
+
+      await fetchMyHistory();
+
+      if (formMessage) {
+        formMessage.textContent = 'Process completed! All entries saved successfully.';
+        formMessage.classList.remove('error');
+        formMessage.style.color = '#6df5a4';
+        setTimeout(() => {
+          formMessage.textContent = '';
+          formMessage.style.color = '';
+        }, 5000);
+      }
     }
   } catch (error) {
-    console.error('Error fetching summary:', error);
+    console.error('Error completing process:', error);
+    setFormError('Error communicating with server.');
+  } finally {
+    if (completeBtn) {
+      completeBtn.disabled = false;
+      completeBtn.textContent = 'Complete Process';
+    }
   }
 }
 
 function init() {
   if (testcaseForm) testcaseForm.addEventListener('submit', parseTestcaseForm);
-  if (testcaseTableBody) testcaseTableBody.addEventListener('click', removeRecord);
+  if (testcaseTableBody) testcaseTableBody.addEventListener('click', removeDraftRecord);
+  
+  const completeBtn = document.getElementById('complete-process');
+  if (completeBtn) completeBtn.addEventListener('click', completeProcess);
+  
+  const historyTable = document.getElementById('history-table');
+  const historyTableBodyEl = historyTable ? historyTable.querySelector('tbody') : null;
+  if (historyTableBodyEl) historyTableBodyEl.addEventListener('click', removeHistoryRecord);
+
   if (exportButton) exportButton.addEventListener('click', exportSummary);
   if (exportExcelButton) exportExcelButton.addEventListener('click', downloadExcel);
   if (exportImageButton) exportImageButton.addEventListener('click', downloadStatusImage);
+
   if (projectNameInput) {
     projectNameInput.addEventListener('input', () => {
       const projectName = projectNameInput.value.trim();
       if (projectDisplay) {
-        projectDisplay.textContent = projectName || 'Untitled Project';
+        projectDisplay.textContent = projectName || 'Untitled Customer';
       }
       document.title = projectName ? `${projectName} - Module Status Tracker` : 'Module Status Tracker';
     });
     if (projectDisplay) {
-      projectDisplay.textContent = projectNameInput.value.trim() || 'Untitled Project';
+      projectDisplay.textContent = projectNameInput.value.trim() || 'Untitled Customer';
     }
   }
-  refreshDashboard();
+  
+  fetchMyHistory();
+  updateTable();
+  updateDraftSummary();
 }
 
 init();

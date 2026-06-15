@@ -593,3 +593,31 @@ td {
   background: rgba(255, 106, 112, 0.12);
   border-color: rgba(255, 106, 112, 0.22);
 }
+
+/* Complete Process Button styling */
+.complete-btn {
+  background: #4db572;
+}
+
+.complete-btn:hover {
+  background: #3c9d5d;
+  transform: translateY(-1px);
+}
+
+.complete-btn:disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Project Header UI Row */
+.project-header-row-ui td {
+  padding-top: 1.2rem;
+  padding-bottom: 0.6rem;
+  border-bottom: none;
+  background: rgba(109, 245, 164, 0.08);
+  color: #6df5a4;
+  font-weight: 800;
+  font-size: 1.05rem;
+}

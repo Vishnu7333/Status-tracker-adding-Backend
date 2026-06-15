@@ -10,12 +10,12 @@
   <header>
     <div class="project-banner">
       <label class="project-name-field">
-        Project Name
+        Customer Name
         <input id="project-name" type="text" pattern="[A-Za-z ]+" 
-          placeholder="Enter project name" title="Letters only" required />
+          placeholder="Enter customer name" title="Letters only" required />
         <span class="field-error" id="project-name-error" aria-live="polite"></span>
       </label>
-      <p class="project-display">Project: <span id="project-display">Untitled Project</span></p>
+      <p class="project-display">Customer: <span id="project-display">Untitled Customer</span></p>
       <a href="admin.html" class="nav-btn admin-btn">Admin Dashboard 🛡️</a>
     </div>
     <h1>Module Status Tracker</h1>
@@ -72,7 +72,7 @@
             Comments
             <input id="comment-text" type="text" placeholder="Optional comments" />
           </label>
-          <button type="submit">Add Total</button>
+          <button type="submit">Add Submodule</button>
           <p id="form-message" class="form-message" aria-live="polite"></p>
         </form>
       </div>
@@ -96,11 +96,38 @@
     </section>
 
     <section class="table-section card">
-      <h2>Status Table</h2>
+      <h2>Current Draft</h2>
       <div class="table-wrapper">
         <table id="testcase-table">
           <thead>
             <tr>
+              <th>Module</th>
+              <th>Submodule</th>
+              <th>Total</th>
+              <th>Pass</th>
+              <th>Fail</th>
+              <th>On Hold</th>
+              <th>Pending</th>
+              <th>Status</th>
+              <th>Comments</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="table-actions" style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
+        <button id="complete-process" class="complete-btn" type="button">Complete Process</button>
+      </div>
+    </section>
+
+    <section class="table-section card history-section" style="margin-top: 2rem;">
+      <h2>Saved History (Database)</h2>
+      <div class="table-wrapper">
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
               <th>Module</th>
               <th>Submodule</th>
               <th>Total</th>
