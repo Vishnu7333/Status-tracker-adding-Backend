@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module Status Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="project-banner">
+      <label class="project-name-field">
+        Project Name
+        <input id="project-name" type="text" pattern="[A-Za-z ]+" 
+          placeholder="Enter project name" title="Letters only" required />
+        <span class="field-error" id="project-name-error" aria-live="polite"></span>
+      </label>
+      <p class="project-display">Project: <span id="project-display">Untitled Project</span></p>
+    </div>
+    <h1>Module Status Tracker</h1>
+    <p>Track module and submodule totals with Pass, Fail, On Hold, and Pending counts.</p>
+  </header>
+
+  <main>
+    <section class="input-section">
+      <div class="card">
+        <h2>Add Submodule Total</h2>
+        <form id="testcase-form">
+          <label>
+            Module
+            <input id="module-name" type="text" pattern="[A-Za-z ]+" 
+              placeholder="Enter module name" title="Letters only" required />
+            <span class="field-error" id="module-name-error" aria-live="polite"></span>
+          </label>
+          <label>
+            Submodule
+            <input id="submodule-name" type="text" pattern="[A-Za-z ]+" 
+              placeholder="Enter submodule name" title="Letters only" required />
+            <span class="field-error" id="submodule-name-error" aria-live="polite"></span>
+          </label>
+          <label>
+            Total
+            <input id="total-count-input" type="number" min="0" step="1" placeholder="Enter total" />
+            <span class="field-error" id="total-count-input-error" aria-live="polite"></span>
+          </label>
+          <div class="count-grid">
+            <label>
+              Pass Count
+              <input id="pass-count-input" type="number" min="0" step="1" placeholder="Enter pass count" />
+              <span class="field-error" id="pass-count-input-error" aria-live="polite"></span>
+            </label>
+            <label>
+              Fail Count
+              <input id="fail-count-input" type="number" min="0" step="1" placeholder="Enter fail count" />
+              <span class="field-error" id="fail-count-input-error" aria-live="polite"></span>
+            </label>
+            <label>
+              On Hold Count
+              <input id="onhold-count-input" type="number" min="0" step="1" placeholder="Enter on-hold count" />
+              <span class="field-error" id="onhold-count-input-error" aria-live="polite"></span>
+            </label>
+            <label>
+              Pending for Execution
+              <input id="pending-count-input" type="number" min="0" step="1" placeholder="Enter pending count" />
+              <span class="field-error" id="pending-count-input-error" aria-live="polite"></span>
+            </label>
+          </div>
+          <p class="form-hint">Enter Total and counts that add up to it. 
+            If exactly one count is blank, it will auto-calculate.</p>
+          <label>
+            Comments
+            <input id="comment-text" type="text" placeholder="Optional comments" />
+          </label>
+          <button type="submit">Add Total</button>
+          <p id="form-message" class="form-message" aria-live="polite"></p>
+        </form>
+      </div>
+
+      <div class="card summary-card">
+        <h2>Overall Summary</h2>
+        <div class="summary-grid">
+          <div><strong>Total Submodules</strong><span id="total-count">0</span></div>
+          <div><strong>Total Count</strong><span id="submodule-total-count">0</span></div>
+          <div><strong>Pass</strong><span id="pass-count">0</span></div>
+          <div><strong>Fail</strong><span id="fail-count">0</span></div>
+          <div><strong>On-Hold</strong><span id="onhold-count">0</span></div>
+          <div><strong>Pending</strong><span id="pending-count">0</span></div>
+        </div>
+        <div class="export-actions">
+          <button id="export-json">Export Summary</button>
+          <button id="export-excel" type="button">Download Excel</button>
+          <button id="export-image" type="button">Download Image</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-section card">
+      <h2>Status Table</h2>
+      <div class="table-wrapper">
+        <table id="testcase-table">
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Submodule</th>
+              <th>Total</th>
+              <th>Pass</th>
+              <th>Fail</th>
+              <th>On Hold</th>
+              <th>Pending</th>
+              <th>Status</th>
+              <th>Comments</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="script.js"></script>
+</body>
+</html>
