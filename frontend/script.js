@@ -22,9 +22,16 @@ const exportExcelButton = document.getElementById('export-excel');
 const exportImageButton = document.getElementById('export-image');
 
 const records = [];
+const BASE_URL = 'http://localhost:8080';
+const API_HEADERS = {
+  'Content-Type': 'application/json',
+  'X-User-Email': 'john.doe@oracle.com',
+  'X-User-Name': 'John Doe'
+};
 
 // Add real-time validation for alphabets only in Project Name, Module, and Submodule
 function validateAlphabetsOnly(input) {
+  if (!input) return;
   input.addEventListener('input', (e) => {
     const value = e.target.value;
     const filtered = value.replace(/[^A-Za-z ]/g, '');
@@ -34,9 +41,9 @@ function validateAlphabetsOnly(input) {
   });
 }
 
-validateAlphabetsOnly(projectNameInput);
-validateAlphabetsOnly(moduleInput);
-validateAlphabetsOnly(submoduleInput);
+if (projectNameInput) validateAlphabetsOnly(projectNameInput);
+if (moduleInput) validateAlphabetsOnly(moduleInput);
+if (submoduleInput) validateAlphabetsOnly(submoduleInput);
 
 function readOptionalCount(input) {
   const rawValue = input.value.trim();
@@ -54,16 +61,21 @@ function toCount(value) {
 }
 
 function setFormError(message) {
-  formMessage.textContent = message;
-  formMessage.classList.add('error');
+  if (formMessage) {
+    formMessage.textContent = message;
+    formMessage.classList.add('error');
+  }
 }
 
 function clearFormError() {
-  formMessage.textContent = '';
-  formMessage.classList.remove('error');
+  if (formMessage) {
+    formMessage.textContent = '';
+    formMessage.classList.remove('error');
+  }
 }
 
 function setFieldError(field, message) {
+  if (!field) return;
   const errorSpan = document.getElementById(`${field.id}-error`);
   if (errorSpan) {
     errorSpan.textContent = message;
@@ -79,6 +91,7 @@ function scrollToField(field) {
 }
 
 function clearFieldError(field) {
+  if (!field) return;
   const errorSpan = document.getElementById(`${field.id}-error`);
   if (errorSpan) {
     errorSpan.textContent = '';
@@ -87,7 +100,9 @@ function clearFieldError(field) {
 }
 
 function clearAllFieldErrors() {
-  [projectNameInput, moduleInput, submoduleInput, totalCountInput, passCountInput, failCountInput, onholdCountInput, pendingCountInput].forEach((field) => clearFieldError(field));
+  [projectNameInput, moduleInput, submoduleInput, totalCountInput, passCountInput, failCountInput, onholdCountInput, pendingCountInput].forEach((field) => {
+    if (field) clearFieldError(field);
+  });
 }
 
 function getStatus(record) {
@@ -184,7 +199,7 @@ function createRow(record, index) {
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
-      <button class="remove-button" data-index="${index}" aria-label="Remove record">
+      <button class="remove-button" data-index="${index}" data-id="${record.id}" aria-label="Remove record">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M3 6h18" />
           <path d="M8 6V4h8v2" />
@@ -199,6 +214,7 @@ function createRow(record, index) {
 }
 
 function updateTable() {
+  if (!testcaseTableBody) return;
   testcaseTableBody.innerHTML = '';
 
   if (!records.length) {
@@ -259,63 +275,66 @@ function summarize() {
 }
 
 function updateSummaryUI(summary) {
-  totalCountEl.textContent = summary.totalSubmodules;
-  submoduleTotalCountEl.textContent = summary.total;
-  passCountEl.textContent = summary.pass;
-  failCountEl.textContent = summary.fail;
-  onholdCountEl.textContent = summary.onhold;
-  pendingCountEl.textContent = summary.pending;
+  if (!summary) return;
+  if (totalCountEl) totalCountEl.textContent = summary.totalSubmodules ?? 0;
+  if (submoduleTotalCountEl) submoduleTotalCountEl.textContent = summary.total ?? 0;
+  if (passCountEl) passCountEl.textContent = summary.pass ?? 0;
+  if (failCountEl) failCountEl.textContent = summary.fail ?? 0;
+  if (onholdCountEl) onholdCountEl.textContent = summary.onhold ?? 0;
+  if (pendingCountEl) pendingCountEl.textContent = summary.pending ?? 0;
 }
 
-function parseTestcaseForm(event) {
+async function parseTestcaseForm(event) {
   event.preventDefault();
 
   clearAllFieldErrors();
-  const projectName = projectNameInput.value.trim();
+  const projectName = projectNameInput ? projectNameInput.value.trim() : '';
   if (!projectName) {
-    setFieldError(projectNameInput, 'Project Name is required.');
-    scrollToField(projectNameInput);
+    if (projectNameInput) {
+      setFieldError(projectNameInput, 'Project Name is required.');
+      scrollToField(projectNameInput);
+    }
     return;
   }
 
-  const total = readOptionalCount(totalCountInput);
-  const pass = readOptionalCount(passCountInput);
-  const fail = readOptionalCount(failCountInput);
-  const onhold = readOptionalCount(onholdCountInput);
-  const pending = readOptionalCount(pendingCountInput);
+  const total = totalCountInput ? readOptionalCount(totalCountInput) : null;
+  const pass = passCountInput ? readOptionalCount(passCountInput) : null;
+  const fail = failCountInput ? readOptionalCount(failCountInput) : null;
+  const onhold = onholdCountInput ? readOptionalCount(onholdCountInput) : null;
+  const pending = pendingCountInput ? readOptionalCount(pendingCountInput) : null;
 
   const values = { total, pass, fail, onhold, pending };
   if (Object.values(values).some((value) => Number.isNaN(value))) {
     let scrolled = false;
-    if (isNaN(total)) {
+    if (isNaN(total) && totalCountInput) {
       setFieldError(totalCountInput, 'Enter a valid non-negative number.');
       if (!scrolled) {
         scrollToField(totalCountInput);
         scrolled = true;
       }
     }
-    if (isNaN(pass)) {
+    if (isNaN(pass) && passCountInput) {
       setFieldError(passCountInput, 'Enter a valid non-negative number.');
       if (!scrolled) {
         scrollToField(passCountInput);
         scrolled = true;
       }
     }
-    if (isNaN(fail)) {
+    if (isNaN(fail) && failCountInput) {
       setFieldError(failCountInput, 'Enter a valid non-negative number.');
       if (!scrolled) {
         scrollToField(failCountInput);
         scrolled = true;
       }
     }
-    if (isNaN(onhold)) {
+    if (isNaN(onhold) && onholdCountInput) {
       setFieldError(onholdCountInput, 'Enter a valid non-negative number.');
       if (!scrolled) {
         scrollToField(onholdCountInput);
         scrolled = true;
       }
     }
-    if (isNaN(pending)) {
+    if (isNaN(pending) && pendingCountInput) {
       setFieldError(pendingCountInput, 'Enter a valid non-negative number.');
       if (!scrolled) {
         scrollToField(pendingCountInput);
@@ -335,25 +354,33 @@ function parseTestcaseForm(event) {
     const missingField = blankCountFields[0];
     const missingValue = values.total - countTotal;
     if (missingValue < 0) {
-      setFieldError(totalCountInput, 'Counts exceed Total.');
-      scrollToField(totalCountInput);
+      if (totalCountInput) {
+        setFieldError(totalCountInput, 'Counts exceed Total.');
+        scrollToField(totalCountInput);
+      }
       return;
     }
 
     values[missingField] = missingValue;
   } else if (countTotal > values.total) {
-    setFieldError(totalCountInput, 'Counts exceed Total.');
-    scrollToField(totalCountInput);
+    if (totalCountInput) {
+      setFieldError(totalCountInput, 'Counts exceed Total.');
+      scrollToField(totalCountInput);
+    }
     return;
   } else if (countTotal < values.total) {
-    setFieldError(totalCountInput, 'Counts must equal Total.');
-    scrollToField(totalCountInput);
+    if (totalCountInput) {
+      setFieldError(totalCountInput, 'Counts must equal Total.');
+      scrollToField(totalCountInput);
+    }
     return;
   }
 
   if (values.total < countTotal) {
-    setFieldError(totalCountInput, 'Counts exceed Total.');
-    scrollToField(totalCountInput);
+    if (totalCountInput) {
+      setFieldError(totalCountInput, 'Counts exceed Total.');
+      scrollToField(totalCountInput);
+    }
     return;
   }
 
@@ -365,56 +392,51 @@ function parseTestcaseForm(event) {
 
   const record = {
     project: projectName,
-    module: moduleInput.value.trim(),
-    submodule: submoduleInput.value.trim(),
+    module: moduleInput ? moduleInput.value.trim() : '',
+    submodule: submoduleInput ? submoduleInput.value.trim() : '',
     total: values.total,
     pass: values.pass,
     fail: values.fail,
     onhold: values.onhold,
     pending: values.pending,
-    comments: commentInput.value.trim(),
+    comments: commentInput ? commentInput.value.trim() : '',
   };
 
   if (!record.module || !record.submodule || Number.isNaN(record.total)) {
     return;
   }
 
-  const existingIndex = findRecordIndex(record.module, record.submodule);
-  if (existingIndex >= 0) {
-    const existingRecord = records[existingIndex];
-    records[existingIndex] = {
-      ...existingRecord,
-      project: projectName,
-      total: existingRecord.total + record.total,
-      pass: existingRecord.pass + record.pass,
-      fail: existingRecord.fail + record.fail,
-      onhold: existingRecord.onhold + record.onhold,
-      pending: existingRecord.pending + record.pending,
-      comments: [existingRecord.comments, record.comments].filter(Boolean).join(' | '),
-    };
-  } else {
-    records.push(record);
+  try {
+    const response = await fetch(`${BASE_URL}/api/entries`, {
+      method: 'POST',
+      headers: API_HEADERS,
+      body: JSON.stringify(record)
+    });
+    const result = await response.json();
+    if (result.success) {
+      clearFormError();
+      if (moduleInput) moduleInput.value = '';
+      if (submoduleInput) submoduleInput.value = '';
+      if (totalCountInput) totalCountInput.value = '';
+      if (passCountInput) passCountInput.value = '';
+      if (failCountInput) failCountInput.value = '';
+      if (onholdCountInput) onholdCountInput.value = '';
+      if (pendingCountInput) pendingCountInput.value = '';
+      if (commentInput) commentInput.value = '';
+
+      await refreshDashboard();
+    } else {
+      setFormError(result.message || 'Failed to submit entry.');
+    }
+  } catch (error) {
+    console.error('Error submitting entry:', error);
+    setFormError('Error communicating with server.');
   }
-  clearFormError();
-  moduleInput.value = '';
-  submoduleInput.value = '';
-  totalCountInput.value = '';
-  passCountInput.value = '';
-  failCountInput.value = '';
-  onholdCountInput.value = '';
-  pendingCountInput.value = '';
-  commentInput.value = '';
-
-  refreshDashboard();
 }
 
-function refreshDashboard() {
-  updateTable();
-  updateSummaryUI(summarize());
-}
 
 function exportSummary() {
-  const projectName = projectNameInput.value.trim();
+  const projectName = projectNameInput ? projectNameInput.value.trim() : '';
   if (!projectName) {
     setFormError('Project Name is required.');
     return;
@@ -440,7 +462,7 @@ function exportSummary() {
 }
 
 function createImageReport() {
-  const projectName = projectNameInput.value.trim() || 'Untitled Project';
+  const projectName = projectNameInput ? projectNameInput.value.trim() : 'Untitled Project';
   const summary = summarize();
   const report = document.createElement('section');
   report.className = 'image-report';
@@ -565,7 +587,7 @@ async function downloadStatusImage() {
     return;
   }
 
-  const projectName = projectNameInput.value.trim() || 'module-status-tracker';
+  const projectName = projectNameInput ? projectNameInput.value.trim() : 'module-status-tracker';
   const fileName = `${projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'module-status-tracker'}-status.png`;
   const report = createImageReport();
   document.body.appendChild(report);
@@ -591,7 +613,7 @@ async function downloadStatusImage() {
 }
 
 function getModuleSummaries() {
-  const projectName = projectNameInput.value.trim();
+  const projectName = projectNameInput ? projectNameInput.value.trim() : '';
   const groupedRecords = groupByModule();
   return Object.entries(groupedRecords).map(([moduleName, moduleRecords]) => {
     const summary = moduleRecords.reduce(
@@ -626,11 +648,11 @@ function getModuleSummaries() {
   });
 }
 
-function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex) {
+function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, projectHeaderRows) {
   const isHeaderRow = rowIndex === 2;
-  const isProjectRow = rowIndex === 0;
+  const isTitleRow = rowIndex === 0;
   const isGrandTotalRow = rowIndex === grandTotalRowIndex;
-  const isNumericColumn = columnIndex >= 2 && columnIndex <= 6;
+  const isProjectHeaderRow = projectHeaderRows && projectHeaderRows.has(rowIndex);
   const isCommentsColumn = columnIndex === 8;
 
   const style = {
@@ -652,7 +674,13 @@ function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex) {
     style.font = { bold: true, color: { rgb: '17365D' }, sz: 12 };
   }
 
-  if (isProjectRow || isHeaderRow || (columnIndex === 0 && rowIndex > 2)) {
+  if (isProjectHeaderRow) {
+    style.fill = { fgColor: { rgb: 'E2EFDA' } };
+    style.font = { bold: true, color: { rgb: '375623' }, sz: 13 };
+    style.alignment.horizontal = 'left';
+  }
+
+  if (isTitleRow || isHeaderRow || (columnIndex === 0 && rowIndex > 2)) {
     style.font = { ...style.font, bold: true };
   }
 
@@ -672,25 +700,43 @@ async function downloadExcel() {
       return;
     }
 
-    const projectName = projectNameInput.value.trim();
-    if (!projectName) {
-      setFormError('Project Name is required.');
-      return;
-    }
+    // Group records by project, then by module within each project
+    const groupedByProject = records.reduce((groups, record) => {
+      const key = record.project || 'Untitled Project';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(record);
+      return groups;
+    }, {});
 
-    const groupedRecords = groupByModule();
-    const summaryRows = [[`Project: ${projectName}`], [], ['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'Status', 'Comments']];
+    const summaryRows = [['Module Status Tracker'], [], ['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'Status', 'Comments']];
     const summaryMerges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+    const projectHeaderRows = new Set();
 
-    Object.entries(groupedRecords).forEach(([moduleName, moduleRecords]) => {
-      const moduleStartRow = summaryRows.length;
-      moduleRecords.forEach((record) => {
-        summaryRows.push([moduleName, record.submodule, record.total, record.pass, record.fail, record.onhold, record.pending, getStatus(record), record.comments || '-']);
+    Object.entries(groupedByProject).forEach(([projName, projRecords]) => {
+      // Add project header row
+      const projectRowIndex = summaryRows.length;
+      summaryRows.push([`Project: ${projName}`, '', '', '', '', '', '', '', '']);
+      summaryMerges.push({ s: { r: projectRowIndex, c: 0 }, e: { r: projectRowIndex, c: 8 } });
+      projectHeaderRows.add(projectRowIndex);
+
+      // Group this project's records by module
+      const moduleGroups = projRecords.reduce((groups, record) => {
+        const key = record.module;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(record);
+        return groups;
+      }, {});
+
+      Object.entries(moduleGroups).forEach(([moduleName, moduleRecords]) => {
+        const moduleStartRow = summaryRows.length;
+        moduleRecords.forEach((record) => {
+          summaryRows.push([moduleName, record.submodule, record.total, record.pass, record.fail, record.onhold, record.pending, getStatus(record), record.comments || '-']);
+        });
+
+        if (moduleRecords.length > 1) {
+          summaryMerges.push({ s: { r: moduleStartRow, c: 0 }, e: { r: summaryRows.length - 1, c: 0 } });
+        }
       });
-
-      if (moduleRecords.length > 1) {
-        summaryMerges.push({ s: { r: moduleStartRow, c: 0 }, e: { r: summaryRows.length - 1, c: 0 } });
-      }
     });
 
     const summaryTotals = summarize();
@@ -738,7 +784,7 @@ async function downloadExcel() {
           return;
         }
 
-        summarySheet[cellRef].s = buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex);
+        summarySheet[cellRef].s = buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, projectHeaderRows);
       });
     });
 
@@ -751,7 +797,25 @@ async function downloadExcel() {
       };
     }
 
-    summaryMerges.slice(1).forEach((merge) => {
+    // Style project header rows
+    projectHeaderRows.forEach((rowIdx) => {
+      for (let c = 0; c < 9; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: c });
+        if (!summarySheet[cellRef]) {
+          summarySheet[cellRef] = { t: 's', v: '' };
+        }
+        summarySheet[cellRef].s = {
+          alignment: { horizontal: c === 0 ? 'left' : 'center', vertical: 'center' },
+          fill: { fgColor: { rgb: 'E2EFDA' } },
+          font: { bold: true, color: { rgb: '375623' }, sz: 13 },
+          border: thinBorder,
+        };
+      }
+      summarySheet['!rows'][rowIdx] = { hpt: 26 };
+    });
+
+    // Style module merge cells
+    summaryMerges.filter((m) => !projectHeaderRows.has(m.s.r) && m.s.r !== 0).forEach((merge) => {
       const cellRef = XLSX.utils.encode_cell({ r: merge.s.r, c: merge.s.c });
       if (summarySheet[cellRef]) {
         summarySheet[cellRef].s = {
@@ -781,38 +845,103 @@ async function downloadExcel() {
 
     XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
 
-    formMessage.textContent = '';
-    formMessage.classList.remove('error');
+    clearFormError();
     XLSX.writeFile(workbook, 'module-status-tracker.xlsx');
   } catch (error) {
     setFormError('Excel download is unavailable right now. Please try again.');
   }
 }
 
-function removeRecord(event) {
-  if (!event.target.matches('.remove-button')) {
+async function removeRecord(event) {
+  const button = event.target.closest('.remove-button');
+  if (!button) {
     return;
   }
 
-  const index = Number(event.target.dataset.index);
-  if (!Number.isNaN(index)) {
-    records.splice(index, 1);
-    refreshDashboard();
+  const id = button.dataset.id;
+  if (id) {
+    try {
+      const response = await fetch(`${BASE_URL}/api/entries/${id}`, {
+        method: 'DELETE',
+        headers: API_HEADERS
+      });
+      const result = await response.json();
+      if (result.success) {
+        await refreshDashboard();
+      } else {
+        setFormError(result.message || 'Failed to delete record.');
+      }
+    } catch (error) {
+      console.error('Error deleting record:', error);
+      setFormError('Error communicating with server.');
+    }
+  }
+}
+
+async function refreshDashboard() {
+  await fetchMyEntries();
+  await fetchMySummary();
+}
+
+async function fetchMyEntries() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/entries/mine`, {
+      method: 'GET',
+      headers: API_HEADERS
+    });
+    const result = await response.json();
+    if (result && result.success && result.data) {
+      records.length = 0;
+      records.push(...result.data);
+      if (result.data.length > 0) {
+        const projectName = result.data[0].project;
+        if (projectNameInput) projectNameInput.value = projectName;
+        if (projectDisplay) projectDisplay.textContent = projectName;
+        document.title = `${projectName} - Module Status Tracker`;
+      }
+    } else {
+      records.length = 0;
+    }
+  } catch (error) {
+    console.error('Error fetching mine entries:', error);
+    records.length = 0;
+  }
+  updateTable();
+}
+
+async function fetchMySummary() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/entries/summary/mine`, {
+      method: 'GET',
+      headers: API_HEADERS
+    });
+    const result = await response.json();
+    if (result.success && result.data) {
+      updateSummaryUI(result.data);
+    }
+  } catch (error) {
+    console.error('Error fetching summary:', error);
   }
 }
 
 function init() {
-  testcaseForm.addEventListener('submit', parseTestcaseForm);
-  testcaseTableBody.addEventListener('click', removeRecord);
-  exportButton.addEventListener('click', exportSummary);
-  exportExcelButton.addEventListener('click', downloadExcel);
-  exportImageButton.addEventListener('click', downloadStatusImage);
-  projectNameInput.addEventListener('input', () => {
-    const projectName = projectNameInput.value.trim();
-    projectDisplay.textContent = projectName || 'Untitled Project';
-    document.title = projectName ? `${projectName} - Module Status Tracker` : 'Module Status Tracker';
-  });
-  projectDisplay.textContent = projectNameInput.value.trim() || 'Untitled Project';
+  if (testcaseForm) testcaseForm.addEventListener('submit', parseTestcaseForm);
+  if (testcaseTableBody) testcaseTableBody.addEventListener('click', removeRecord);
+  if (exportButton) exportButton.addEventListener('click', exportSummary);
+  if (exportExcelButton) exportExcelButton.addEventListener('click', downloadExcel);
+  if (exportImageButton) exportImageButton.addEventListener('click', downloadStatusImage);
+  if (projectNameInput) {
+    projectNameInput.addEventListener('input', () => {
+      const projectName = projectNameInput.value.trim();
+      if (projectDisplay) {
+        projectDisplay.textContent = projectName || 'Untitled Project';
+      }
+      document.title = projectName ? `${projectName} - Module Status Tracker` : 'Module Status Tracker';
+    });
+    if (projectDisplay) {
+      projectDisplay.textContent = projectNameInput.value.trim() || 'Untitled Project';
+    }
+  }
   refreshDashboard();
 }
 
