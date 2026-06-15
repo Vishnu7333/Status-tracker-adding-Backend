@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Module Status Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="project-banner">
+      <div style="width: 100%; max-width: 420px;"></div>
+      <p class="project-display" style="margin-bottom: 0.5rem;">Role: <span style="color: #6df5a4; font-weight: 700;">Administrator 🛡️</span></p>
+      <a href="index.html" class="nav-btn">Back to Tracker 📋</a>
+    </div>
+    <h1>Admin Dashboard</h1>
+    <p>Overall system analytics and team status tracker entries.</p>
+  </header>
+
+  <main>
+    <!-- Dynamic Stats Grid -->
+    <div class="admin-grid" id="admin-stats-grid">
+      <div class="admin-stat-card total-card">
+        <span class="admin-stat-label">Total Test Cases</span>
+        <span class="admin-stat-value" id="overall-total">0</span>
+        <span class="admin-stat-meta" id="overall-passrate">Pass Rate: 0%</span>
+      </div>
+      <div class="admin-stat-card pass-card">
+        <span class="admin-stat-label">Total Passed</span>
+        <span class="admin-stat-value" id="overall-pass">0</span>
+        <span class="admin-stat-meta" id="pass-percentage">0% of total</span>
+      </div>
+      <div class="admin-stat-card fail-card">
+        <span class="admin-stat-label">Total Failed</span>
+        <span class="admin-stat-value" id="overall-fail">0</span>
+        <span class="admin-stat-meta" id="fail-percentage">0% of total</span>
+      </div>
+      <div class="admin-stat-card onhold-card">
+        <span class="admin-stat-label">Total On Hold</span>
+        <span class="admin-stat-value" id="overall-onhold">0</span>
+        <span class="admin-stat-meta" id="onhold-percentage">0% of total</span>
+      </div>
+      <div class="admin-stat-card pending-card">
+        <span class="admin-stat-label">Total Pending</span>
+        <span class="admin-stat-value" id="overall-pending">0</span>
+        <span class="admin-stat-meta" id="pending-percentage">0% of total</span>
+      </div>
+    </div>
+
+    <!-- Error/Loading Messages -->
+    <div id="admin-message" style="display:none; text-align:center; padding:1.2rem; border-radius:12px; margin-bottom:1.5rem; font-weight:700;"></div>
+
+    <!-- Team Performance Section -->
+    <section class="admin-section card">
+      <h2>Team Performance</h2>
+      <div class="table-container" style="overflow-x: auto;">
+        <table id="team-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.08); height: 3rem;">
+              <th>Developer</th>
+              <th>Role</th>
+              <th>Created At</th>
+              <th style="text-align: right;">Total Tracked</th>
+              <th style="text-align: right;">Pass Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="5" class="empty-state">Loading team performance...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Global Activity Log Section -->
+    <section class="admin-section card">
+      <h2>Global Activity Log (All Entries)</h2>
+      <div class="table-container" style="overflow-x: auto;">
+        <table id="global-entries-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.08); height: 3rem;">
+              <th>Owner</th>
+              <th>Project</th>
+              <th>Module</th>
+              <th>Submodule</th>
+              <th style="text-align: right;">Total</th>
+              <th style="text-align: right;">Pass</th>
+              <th style="text-align: right;">Fail</th>
+              <th style="text-align: right;">On Hold</th>
+              <th style="text-align: right;">Pending</th>
+              <th>Comments</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="10" class="empty-state">Loading global entries...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="admin-script.js"></script>
+</body>
+</html>

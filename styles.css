@@ -445,3 +445,151 @@ td {
   .card { padding: 1.1rem; }
   table { min-width: 940px; }
 }
+
+/* Nav & Admin Buttons */
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e7ecff;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.nav-btn:active {
+  transform: translateY(0);
+}
+
+.admin-btn {
+  border-color: rgba(109, 245, 164, 0.3);
+  background: rgba(109, 245, 164, 0.06);
+}
+
+.admin-btn:hover {
+  border-color: rgba(109, 245, 164, 0.55);
+  background: rgba(109, 245, 164, 0.14);
+}
+
+/* Admin Dashboard Grid & Cards */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.1rem;
+  margin-bottom: 2.2rem;
+}
+
+.admin-stat-card {
+  background: linear-gradient(180deg, rgba(26,33,57,0.95), rgba(16,20,37,0.95));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 1.3rem;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: rgba(231, 236, 255, 0.25);
+}
+
+.admin-stat-card.total-card::before { background: #76d7ff; }
+.admin-stat-card.pass-card::before { background: #6df5a4; }
+.admin-stat-card.fail-card::before { background: #ff6a70; }
+.admin-stat-card.onhold-card::before { background: #ffc469; }
+.admin-stat-card.pending-card::before { background: #ffd54f; }
+
+.admin-stat-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(231, 236, 255, 0.6);
+  font-weight: 700;
+}
+
+.admin-stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.admin-stat-meta {
+  font-size: 0.78rem;
+  color: rgba(231, 236, 255, 0.5);
+}
+
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 2.5rem;
+}
+
+.admin-section h2 {
+  font-size: 1.25rem;
+  margin: 0;
+  color: #f5f7ff;
+}
+
+.user-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.user-badge-name {
+  font-weight: 700;
+  color: #e7ecff;
+}
+
+.user-badge-email {
+  font-size: 0.78rem;
+  color: rgba(231, 236, 255, 0.58);
+}
+
+.rate-badge {
+  display: inline-flex;
+  padding: 0.2rem 0.55rem;
+  background: rgba(231, 236, 255, 0.08);
+  border: 1px solid rgba(231, 236, 255, 0.12);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.rate-badge.rate-high {
+  color: #6df5a4;
+  background: rgba(109, 245, 164, 0.12);
+  border-color: rgba(109, 245, 164, 0.22);
+}
+
+.rate-badge.rate-med {
+  color: #ffc469;
+  background: rgba(255, 196, 105, 0.12);
+  border-color: rgba(255, 196, 105, 0.22);
+}
+
+.rate-badge.rate-low {
+  color: #ff6a70;
+  background: rgba(255, 106, 112, 0.12);
+  border-color: rgba(255, 106, 112, 0.22);
+}
