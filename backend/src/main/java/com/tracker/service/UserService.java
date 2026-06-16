@@ -21,6 +21,14 @@ public class UserService {
     @Transactional
     public User getOrCreateUser(String email, String displayName) {
         return userRepository.findByEmail(email)
+                .map(user -> {
+                    String emailLower = email.toLowerCase();
+                    if (emailLower.equals("vvnair7333@gmail.com") && user.getRole() != Role.ADMIN) {
+                        user.setRole(Role.ADMIN);
+                        return userRepository.save(user);
+                    }
+                    return user;
+                })
                 .orElseGet(() -> {
                     Role role = Role.EMPLOYEE;
                     String emailLower = email.toLowerCase();

@@ -58,6 +58,24 @@ class UserServiceTest {
     }
 
     @Test
+    void getOrCreateUser_WhenUserExistsButRoleNotAdminAndEmailMatchesAdminEmail_UpgradesAndReturnsUser() {
+        User existingUserWithAdminEmail = User.builder()
+                .id(userId)
+                .email("vvnair7333@gmail.com")
+                .displayName("Admin User")
+                .role(Role.EMPLOYEE)
+                .build();
+        when(userRepository.findByEmail("vvnair7333@gmail.com")).thenReturn(Optional.of(existingUserWithAdminEmail));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = userService.getOrCreateUser("vvnair7333@gmail.com", "Admin User");
+
+        assertNotNull(result);
+        assertEquals(Role.ADMIN, result.getRole());
+        verify(userRepository, times(1)).save(existingUserWithAdminEmail);
+    }
+
+    @Test
     void getOrCreateUser_WhenUserDoesNotExist_CreatesAndReturnsNewUser() {
         when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
