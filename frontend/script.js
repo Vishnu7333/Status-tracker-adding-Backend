@@ -22,7 +22,7 @@ const exportExcelButton = document.getElementById('export-excel');
 const exportImageButton = document.getElementById('export-image');
 
 const records = [];
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = 'https://status-tracker-api.onrender.com';
 const API_HEADERS = {
   'Content-Type': 'application/json',
   'X-User-Email': 'john.doe@oracle.com',
