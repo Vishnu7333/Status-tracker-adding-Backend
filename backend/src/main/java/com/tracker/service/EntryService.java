@@ -38,8 +38,8 @@ public class EntryService {
 
         String calculatedStatus = calculateStatus(totalVal, passVal, failVal, onholdVal, pendingVal);
 
-        Optional<Entry> existingEntryOpt = entryRepository.findByUserIdAndModuleAndSubmoduleAndEntryDate(
-                user.getId(), dto.getModule(), dto.getSubmodule(), LocalDate.now()
+        Optional<Entry> existingEntryOpt = entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(
+                user.getId(), dto.getProject(), dto.getModule(), dto.getSubmodule(), LocalDate.now()
         );
 
         Entry entryToSave;

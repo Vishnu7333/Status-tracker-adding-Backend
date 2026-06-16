@@ -12,7 +12,7 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
 
     List<Entry> findByUserIdOrderByEntryDateDesc(UUID userId);
 
-    Optional<Entry> findByUserIdAndModuleAndSubmoduleAndEntryDate(UUID userId, String module, String submodule, LocalDate date);
+    Optional<Entry> findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(UUID userId, String project, String module, String submodule, LocalDate date);
 
     List<Entry> findAllByOrderByEntryDateDesc();
 
