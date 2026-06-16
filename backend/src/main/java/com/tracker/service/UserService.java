@@ -24,7 +24,7 @@ public class UserService {
                 .orElseGet(() -> {
                     Role role = Role.EMPLOYEE;
                     String emailLower = email.toLowerCase();
-                    if (emailLower.equals("john.doe@oracle.com") || emailLower.contains("admin") || emailLower.contains("vishnu")) {
+                    if (emailLower.equals("vvnair7333@gmail.com")) {
                         role = Role.ADMIN;
                     }
                     User newUser = User.builder()

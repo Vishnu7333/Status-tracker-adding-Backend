@@ -1138,7 +1138,7 @@ function updateProfileUI(name, email) {
   
   // Update Admin button visibility based on admin email check
   const emailLower = email.toLowerCase();
-  const isAdmin = emailLower.includes('admin') || emailLower.includes('vishnu') || emailLower === 'john.doe@oracle.com';
+  const isAdmin = emailLower === 'vvnair7333@gmail.com';
   if (adminDashboardBtn) {
     adminDashboardBtn.style.display = isAdmin ? 'inline-flex' : 'none';
   }
