@@ -18,8 +18,8 @@
       </div>
       <label class="project-name-field">
         Customer Name
-        <input id="project-name" type="text" pattern="[A-Za-z ]+" 
-          placeholder="Enter customer name" title="Letters only" required />
+        <input id="project-name" type="text" pattern="^(?=.*[A-Za-z])[A-Za-z .-]+$" 
+          placeholder="Enter customer name" title="Must contain at least one letter. Only letters, spaces, dots, and hyphens allowed" required />
         <span class="field-error" id="project-name-error" aria-live="polite"></span>
       </label>
       <p class="project-display">Customer: <span id="project-display">Untitled Customer</span></p>

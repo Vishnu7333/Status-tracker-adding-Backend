@@ -31,7 +31,7 @@ const API_HEADERS = {
 };
 const historyTableBody = document.querySelector('#history-table tbody');
 
-// Add real-time validation for alphabets only in Project Name, Module, and Submodule
+// Add real-time validation for alphabets only in Module and Submodule
 function validateAlphabetsOnly(input) {
   if (!input) return;
   input.addEventListener('input', (e) => {
@@ -43,7 +43,19 @@ function validateAlphabetsOnly(input) {
   });
 }
 
-if (projectNameInput) validateAlphabetsOnly(projectNameInput);
+// Add real-time validation for project name (alphabets, spaces, dots, hyphens)
+function validateProjectNameInput(input) {
+  if (!input) return;
+  input.addEventListener('input', (e) => {
+    const value = e.target.value;
+    const filtered = value.replace(/[^A-Za-z .-]/g, '');
+    if (value !== filtered) {
+      e.target.value = filtered;
+    }
+  });
+}
+
+if (projectNameInput) validateProjectNameInput(projectNameInput);
 if (moduleInput) validateAlphabetsOnly(moduleInput);
 if (submoduleInput) validateAlphabetsOnly(submoduleInput);
 
@@ -323,6 +335,14 @@ async function parseTestcaseForm(event) {
   if (!projectName) {
     if (projectNameInput) {
       setFieldError(projectNameInput, 'Customer Name is required.');
+      scrollToField(projectNameInput);
+    }
+    return;
+  }
+
+  if (!/[A-Za-z]/.test(projectName)) {
+    if (projectNameInput) {
+      setFieldError(projectNameInput, 'Customer Name must contain at least one letter.');
       scrollToField(projectNameInput);
     }
     return;

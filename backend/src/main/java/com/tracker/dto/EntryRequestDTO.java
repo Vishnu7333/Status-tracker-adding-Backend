@@ -14,6 +14,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EntryRequestDTO {
 
+    @NotBlank
+    @jakarta.validation.constraints.Pattern(
+        regexp = "^(?=.*[a-zA-Z])[a-zA-Z .-]+$",
+        message = "Customer Name must contain at least one letter and can only include letters, spaces, dots, and hyphens"
+    )
     private String project;
 
     @NotBlank
