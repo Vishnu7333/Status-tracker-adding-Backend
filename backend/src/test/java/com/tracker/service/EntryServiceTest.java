@@ -86,7 +86,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenEntryDoesNotExist_CreatesNewEntry() {
-        when(entryRepository.findByUserIdAndSubmoduleAndEntryDate(any(), any(), any()))
+        when(entryRepository.findByUserIdAndModuleAndSubmoduleAndEntryDate(any(), any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -104,7 +104,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenEntryExists_UpdatesExistingEntryAndAccumulatesCounts() {
-        when(entryRepository.findByUserIdAndSubmoduleAndEntryDate(user.getId(), "OAuth2", LocalDate.now()))
+        when(entryRepository.findByUserIdAndModuleAndSubmoduleAndEntryDate(user.getId(), "Authentication", "OAuth2", LocalDate.now()))
                 .thenReturn(Optional.of(existingEntry));
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -138,7 +138,7 @@ class EntryServiceTest {
     void statusCalculation_LogicTests() {
         // Test case: total > 0 and pass == total -> Pass
         EntryRequestDTO d1 = EntryRequestDTO.builder().total(10).pass(10).fail(0).onhold(0).pending(0).build();
-        when(entryRepository.findByUserIdAndSubmoduleAndEntryDate(any(), any(), any())).thenReturn(Optional.empty());
+        when(entryRepository.findByUserIdAndModuleAndSubmoduleAndEntryDate(any(), any(), any(), any())).thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
         assertEquals("Pass", entryService.upsertEntry(user, d1).getStatus());
 
