@@ -20,12 +20,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleValidationException_ReturnsBadRequestWithFieldErrors() {
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
+        org.springframework.validation.BeanPropertyBindingResult bindingResult = 
+                new org.springframework.validation.BeanPropertyBindingResult(new Object(), "objectName");
         FieldError fieldError = new FieldError("objectName", "submodule", "must not be blank");
+        bindingResult.addError(fieldError);
         
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldErrors()).thenReturn(Collections.singletonList(fieldError));
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
 
         ResponseEntity<ApiResponse<Void>> response = handler.handleValidationException(ex);
 
