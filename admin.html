@@ -45,6 +45,16 @@
         <span class="admin-stat-value" id="overall-pending">0</span>
         <span class="admin-stat-meta" id="pending-percentage">0% of total</span>
       </div>
+      <div class="admin-stat-card na-card">
+        <span class="admin-stat-label">Total N/A</span>
+        <span class="admin-stat-value" id="overall-na">0</span>
+        <span class="admin-stat-meta" id="na-percentage">0% of total</span>
+      </div>
+      <div class="admin-stat-card functional-card">
+        <span class="admin-stat-label">Total Functional Team</span>
+        <span class="admin-stat-value" id="overall-functional">0</span>
+        <span class="admin-stat-meta" id="functional-percentage">0% of total</span>
+      </div>
     </div>
 
     <!-- Error/Loading Messages -->
@@ -89,12 +99,14 @@
               <th style="text-align: right;">Fail</th>
               <th style="text-align: right;">On Hold</th>
               <th style="text-align: right;">Pending</th>
+              <th style="text-align: right;">N/A</th>
+              <th style="text-align: right;">Functional Team</th>
               <th>Comments</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td colspan="10" class="empty-state">Loading global entries...</td>
+              <td colspan="12" class="empty-state">Loading global entries...</td>
             </tr>
           </tbody>
         </table>

@@ -98,6 +98,8 @@ function updateOverallSummaryUI(summary) {
   const fail = summary.fail || 0;
   const onhold = summary.onhold || 0;
   const pending = summary.pending || 0;
+  const na = summary.na || 0;
+  const functionalTeam = summary.functionalTeam || 0;
   const passRate = summary.passRate !== undefined ? summary.passRate : 0;
 
   document.getElementById('overall-total').textContent = total;
@@ -106,6 +108,8 @@ function updateOverallSummaryUI(summary) {
   document.getElementById('overall-fail').textContent = fail;
   document.getElementById('overall-onhold').textContent = onhold;
   document.getElementById('overall-pending').textContent = pending;
+  if (document.getElementById('overall-na')) document.getElementById('overall-na').textContent = na;
+  if (document.getElementById('overall-functional')) document.getElementById('overall-functional').textContent = functionalTeam;
 
   const pct = (val) => total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
 
@@ -113,6 +117,8 @@ function updateOverallSummaryUI(summary) {
   document.getElementById('fail-percentage').textContent = `${pct(fail)}% of total`;
   document.getElementById('onhold-percentage').textContent = `${pct(onhold)}% of total`;
   document.getElementById('pending-percentage').textContent = `${pct(pending)}% of total`;
+  if (document.getElementById('na-percentage')) document.getElementById('na-percentage').textContent = `${pct(na)}% of total`;
+  if (document.getElementById('functional-percentage')) document.getElementById('functional-percentage').textContent = `${pct(functionalTeam)}% of total`;
 }
 
 function updateTeamTableUI(teamSummaries) {
@@ -187,7 +193,7 @@ function updateGlobalEntriesTableUI(entries) {
   tbody.innerHTML = '';
 
   if (entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No status entries found in the system.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="empty-state">No status entries found in the system.</td></tr>`;
     return;
   }
 
@@ -211,6 +217,8 @@ function updateGlobalEntriesTableUI(entries) {
     const fail = entry.fail || 0;
     const onhold = entry.onhold || 0;
     const pending = entry.pending || 0;
+    const na = entry.na || 0;
+    const functionalTeam = entry.functionalTeam || 0;
     const comments = entry.comments || '-';
 
     const row = document.createElement('tr');
@@ -231,6 +239,8 @@ function updateGlobalEntriesTableUI(entries) {
       <td style="text-align: right; color: #ff6a70;">${fail}</td>
       <td style="text-align: right; color: #ffc469;">${onhold}</td>
       <td style="text-align: right; color: #ffd54f;">${pending}</td>
+      <td style="text-align: right; color: #b085f5;">${na}</td>
+      <td style="text-align: right; color: #f472b6;">${functionalTeam}</td>
       <td style="font-size: 0.88rem; color: rgba(231,236,255,0.7); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(comments)}">
         ${escapeHtml(comments)}
       </td>
