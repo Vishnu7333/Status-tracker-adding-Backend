@@ -1,9 +1,25 @@
 const BASE_URL = 'https://status-tracker-api.onrender.com';
 const API_HEADERS = {
-  'Content-Type': 'application/json',
-  'X-User-Email': 'john.doe@oracle.com',
-  'X-User-Name': 'John Doe'
+  get 'Content-Type'() { return 'application/json'; },
+  get 'X-User-Email'() { return localStorage.getItem('userEmail') || ''; },
+  get 'X-User-Name'() { return localStorage.getItem('userName') || ''; }
 };
+
+function checkAdminSession() {
+  const email = localStorage.getItem('userEmail') || '';
+  const name = localStorage.getItem('userName') || '';
+  if (!email || !name) {
+    window.location.href = 'index.html';
+    return;
+  }
+  
+  const emailLower = email.toLowerCase();
+  const isAdmin = emailLower.includes('admin') || emailLower.includes('vishnu') || emailLower === 'john.doe@oracle.com';
+  if (!isAdmin) {
+    window.location.href = 'index.html';
+  }
+}
+checkAdminSession();
 
 const messageBanner = document.getElementById('admin-message');
 

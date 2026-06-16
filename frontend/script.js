@@ -25,9 +25,9 @@ const records = [];
 const historyRecords = [];
 const BASE_URL = 'https://status-tracker-api.onrender.com';
 const API_HEADERS = {
-  'Content-Type': 'application/json',
-  'X-User-Email': 'john.doe@oracle.com',
-  'X-User-Name': 'John Doe'
+  get 'Content-Type'() { return 'application/json'; },
+  get 'X-User-Email'() { return localStorage.getItem('userEmail') || ''; },
+  get 'X-User-Name'() { return localStorage.getItem('userName') || ''; }
 };
 const historyTableBody = document.querySelector('#history-table tbody');
 
@@ -1090,6 +1090,99 @@ async function completeProcess() {
   }
 }
 
+function extractNameFromEmail(email) {
+  if (!email) return '';
+  const prefix = email.split('@')[0];
+  const parts = prefix.split(/[._-]/);
+  return parts
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+const loginModal = document.getElementById('login-modal');
+const loginForm = document.getElementById('login-form');
+const loginEmailInput = document.getElementById('login-email-input');
+const currentUserDisplay = document.getElementById('current-user-display');
+const switchUserBtn = document.getElementById('switch-user-btn');
+const adminDashboardBtn = document.getElementById('admin-dashboard-btn');
+
+function checkUserSession() {
+  const email = localStorage.getItem('userEmail');
+  const name = localStorage.getItem('userName');
+  
+  if (!email || !name) {
+    showLoginModal();
+  } else {
+    hideLoginModal();
+    updateProfileUI(name, email);
+    fetchMyHistory();
+  }
+}
+
+function showLoginModal() {
+  if (loginModal) {
+    loginModal.style.display = 'flex';
+  }
+}
+
+function hideLoginModal() {
+  if (loginModal) {
+    loginModal.style.display = 'none';
+  }
+}
+
+function updateProfileUI(name, email) {
+  if (currentUserDisplay) {
+    currentUserDisplay.textContent = name;
+  }
+  
+  // Update Admin button visibility based on admin email check
+  const emailLower = email.toLowerCase();
+  const isAdmin = emailLower.includes('admin') || emailLower.includes('vishnu') || emailLower === 'john.doe@oracle.com';
+  if (adminDashboardBtn) {
+    adminDashboardBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  }
+}
+
+function handleLoginSubmit(event) {
+  event.preventDefault();
+  const email = loginEmailInput ? loginEmailInput.value.trim() : '';
+  if (!email) return;
+  
+  const name = extractNameFromEmail(email);
+  localStorage.setItem('userEmail', email);
+  localStorage.setItem('userName', name);
+  
+  hideLoginModal();
+  updateProfileUI(name, email);
+  
+  // Clear draft
+  records.length = 0;
+  updateTable();
+  updateDraftSummary();
+  
+  // Load database history
+  fetchMyHistory();
+}
+
+function handleSwitchUser() {
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('userName');
+  
+  if (currentUserDisplay) currentUserDisplay.textContent = '-';
+  if (adminDashboardBtn) adminDashboardBtn.style.display = 'none';
+  
+  records.length = 0;
+  updateTable();
+  updateDraftSummary();
+  
+  if (historyTableBody) {
+    historyTableBody.innerHTML = '<td colspan="11" class="empty-state">No saved entries in the database history.</td>';
+  }
+  
+  showLoginModal();
+}
+
 function init() {
   if (testcaseForm) testcaseForm.addEventListener('submit', parseTestcaseForm);
   if (testcaseTableBody) testcaseTableBody.addEventListener('click', removeDraftRecord);
@@ -1118,7 +1211,10 @@ function init() {
     }
   }
   
-  fetchMyHistory();
+  if (loginForm) loginForm.addEventListener('submit', handleLoginSubmit);
+  if (switchUserBtn) switchUserBtn.addEventListener('click', handleSwitchUser);
+  
+  checkUserSession();
   updateTable();
   updateDraftSummary();
 }

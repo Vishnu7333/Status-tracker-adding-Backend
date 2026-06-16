@@ -43,15 +43,31 @@ class AdminControllerTest {
     @MockBean
     private UserService userService;
 
+    private User adminUser;
+    private User regularUser;
     private UserResponseDTO userResponseDTO;
     private EntryResponseDTO entryResponseDTO;
 
     @BeforeEach
     void setUp() {
-        userResponseDTO = UserResponseDTO.builder()
+        adminUser = User.builder()
                 .id(UUID.randomUUID())
                 .email("admin@example.com")
                 .displayName("Admin User")
+                .role(Role.ADMIN)
+                .build();
+
+        regularUser = User.builder()
+                .id(UUID.randomUUID())
+                .email("employee@example.com")
+                .displayName("Regular User")
+                .role(Role.EMPLOYEE)
+                .build();
+
+        userResponseDTO = UserResponseDTO.builder()
+                .id(adminUser.getId())
+                .email(adminUser.getEmail())
+                .displayName(adminUser.getDisplayName())
                 .role("ADMIN")
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -70,10 +86,11 @@ class AdminControllerTest {
 
     @Test
     @WithMockUser
-    void getAllEntries_ReturnsOk() throws Exception {
+    void getAllEntries_WhenAdmin_ReturnsOk() throws Exception {
         when(entryService.getAllEntries()).thenReturn(Collections.singletonList(entryResponseDTO));
 
-        mockMvc.perform(get("/api/admin/entries"))
+        mockMvc.perform(get("/api/admin/entries")
+                        .requestAttr("currentUser", adminUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data[0].project").value("AdminProj"));
@@ -81,11 +98,27 @@ class AdminControllerTest {
 
     @Test
     @WithMockUser
-    void getOverallSummary_ReturnsOk() throws Exception {
+    void getAllEntries_WhenNotAuthenticated_ReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/admin/entries"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser
+    void getAllEntries_WhenRegularEmployee_ReturnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/admin/entries")
+                        .requestAttr("currentUser", regularUser))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser
+    void getOverallSummary_WhenAdmin_ReturnsOk() throws Exception {
         SummaryDTO summary = SummaryDTO.builder().total(5).pass(5).passRate(100.0).build();
         when(entryService.getOverallSummary()).thenReturn(summary);
 
-        mockMvc.perform(get("/api/admin/summary"))
+        mockMvc.perform(get("/api/admin/summary")
+                        .requestAttr("currentUser", adminUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.passRate").value(100.0));
@@ -93,10 +126,11 @@ class AdminControllerTest {
 
     @Test
     @WithMockUser
-    void getAllUsers_ReturnsOk() throws Exception {
+    void getAllUsers_WhenAdmin_ReturnsOk() throws Exception {
         when(userService.getAllUsers()).thenReturn(Collections.singletonList(userResponseDTO));
 
-        mockMvc.perform(get("/api/admin/users"))
+        mockMvc.perform(get("/api/admin/users")
+                        .requestAttr("currentUser", adminUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data[0].email").value("admin@example.com"));
@@ -104,7 +138,7 @@ class AdminControllerTest {
 
     @Test
     @WithMockUser
-    void getPerUserSummary_ReturnsOk() throws Exception {
+    void getPerUserSummary_WhenAdmin_ReturnsOk() throws Exception {
         SummaryDTO summary = SummaryDTO.builder().total(5).pass(5).passRate(100.0).build();
         UserSummaryDTO userSummary = UserSummaryDTO.builder()
                 .user(userResponseDTO)
@@ -114,7 +148,8 @@ class AdminControllerTest {
 
         when(entryService.getPerUserSummary()).thenReturn(Collections.singletonList(userSummary));
 
-        mockMvc.perform(get("/api/admin/summary/per-user"))
+        mockMvc.perform(get("/api/admin/summary/per-user")
+                        .requestAttr("currentUser", adminUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data[0].user.email").value("admin@example.com"))
@@ -123,7 +158,7 @@ class AdminControllerTest {
 
     @Test
     @WithMockUser
-    void updateRole_ReturnsOk() throws Exception {
+    void updateRole_WhenAdmin_ReturnsOk() throws Exception {
         UUID targetUserId = UUID.randomUUID();
         User updatedUser = User.builder()
                 .id(targetUserId)
@@ -137,6 +172,7 @@ class AdminControllerTest {
 
         mockMvc.perform(put("/api/admin/users/" + targetUserId + "/role")
                         .with(csrf())
+                        .requestAttr("currentUser", adminUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"ADMIN\"}"))
                 .andExpect(status().isOk())

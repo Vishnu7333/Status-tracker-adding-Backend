@@ -25,13 +25,35 @@ public class FakeAuthFilter extends OncePerRequestFilter {
         String email = request.getHeader("X-User-Email");
         String name = request.getHeader("X-User-Name");
 
-        if (email != null && !email.trim().isEmpty() && name != null && !name.trim().isEmpty()) {
+        if (email != null && !email.trim().isEmpty()) {
+            if (name == null || name.trim().isEmpty()) {
+                name = extractNameFromEmail(email);
+            }
             User user = userService.getOrCreateUser(email, name);
             request.setAttribute("currentUser", user);
         } else {
-            request.setAttribute("currentUser", null);
+            if (request.getAttribute("currentUser") == null) {
+                request.setAttribute("currentUser", null);
+            }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String extractNameFromEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return "";
+        }
+        String prefix = email.split("@")[0];
+        String[] parts = prefix.split("[._-]");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                sb.append(Character.toUpperCase(part.charAt(0)))
+                  .append(part.substring(1).toLowerCase())
+                  .append(" ");
+            }
+        }
+        return sb.toString().trim();
     }
 }

@@ -61,6 +61,24 @@ class FakeAuthFilterTest {
     }
 
     @Test
+    void doFilterInternal_WhenEmailOnlyIsPresent_ExtractsNameAndSetsCurrentUserAttribute() throws ServletException, IOException {
+        when(request.getHeader("X-User-Email")).thenReturn("vishnu.kumar@oracle.com");
+        when(request.getHeader("X-User-Name")).thenReturn(null);
+        
+        User vishnuUser = User.builder()
+                .email("vishnu.kumar@oracle.com")
+                .displayName("Vishnu Kumar")
+                .role(Role.ADMIN)
+                .build();
+        when(userService.getOrCreateUser("vishnu.kumar@oracle.com", "Vishnu Kumar")).thenReturn(vishnuUser);
+
+        fakeAuthFilter.doFilterInternal(request, response, filterChain);
+
+        verify(request, times(1)).setAttribute("currentUser", vishnuUser);
+        verify(filterChain, times(1)).doFilter(request, response);
+    }
+
+    @Test
     void doFilterInternal_WhenHeadersAreMissing_SetsCurrentUserToNull() throws ServletException, IOException {
         when(request.getHeader("X-User-Email")).thenReturn(null);
         when(request.getHeader("X-User-Name")).thenReturn(null);
