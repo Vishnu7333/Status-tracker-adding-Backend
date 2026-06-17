@@ -63,6 +63,14 @@ public class Entry {
     @Column(nullable = false)
     private Integer pending = 0;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer na = 0;
+
+    @Builder.Default
+    @Column(name = "functional_team", nullable = false)
+    private Integer functionalTeam = 0;
+
     private String status;
 
     private String comments;

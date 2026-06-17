@@ -27,6 +27,8 @@ public class EntryResponseDTO {
     private Integer fail;
     private Integer onhold;
     private Integer pending;
+    private Integer na;
+    private Integer functionalTeam;
     private String status;
     private String comments;
     private LocalDate entryDate;

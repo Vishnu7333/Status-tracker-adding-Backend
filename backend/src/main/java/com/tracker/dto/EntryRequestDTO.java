@@ -43,5 +43,11 @@ public class EntryRequestDTO {
     @Min(0)
     private Integer pending;
 
+    @Min(0)
+    private Integer na;
+
+    @Min(0)
+    private Integer functionalTeam;
+
     private String comments;
 }

@@ -34,9 +34,11 @@ public class EntryService {
         int failVal = dto.getFail() != null ? dto.getFail() : 0;
         int onholdVal = dto.getOnhold() != null ? dto.getOnhold() : 0;
         int pendingVal = dto.getPending() != null ? dto.getPending() : 0;
-        int totalVal = dto.getTotal() != null ? dto.getTotal() : (passVal + failVal + onholdVal + pendingVal);
+        int naVal = dto.getNa() != null ? dto.getNa() : 0;
+        int functionalTeamVal = dto.getFunctionalTeam() != null ? dto.getFunctionalTeam() : 0;
+        int totalVal = dto.getTotal() != null ? dto.getTotal() : (passVal + failVal + onholdVal + pendingVal + naVal + functionalTeamVal);
 
-        String calculatedStatus = calculateStatus(totalVal, passVal, failVal, onholdVal, pendingVal);
+        String calculatedStatus = calculateStatus(totalVal, passVal, failVal, onholdVal, pendingVal, naVal, functionalTeamVal);
 
         Optional<Entry> existingEntryOpt = entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(
                 user.getId(), dto.getProject(), dto.getModule(), dto.getSubmodule(), LocalDate.now()
@@ -50,6 +52,8 @@ public class EntryService {
             existing.setFail(failVal);
             existing.setOnhold(onholdVal);
             existing.setPending(pendingVal);
+            existing.setNa(naVal);
+            existing.setFunctionalTeam(functionalTeamVal);
             existing.setTotal(totalVal);
             existing.setStatus(calculatedStatus);
             existing.setComments(dto.getComments());
@@ -66,6 +70,8 @@ public class EntryService {
                     .fail(failVal)
                     .onhold(onholdVal)
                     .pending(pendingVal)
+                    .na(naVal)
+                    .functionalTeam(functionalTeamVal)
                     .total(totalVal)
                     .status(calculatedStatus)
                     .comments(dto.getComments())
@@ -150,6 +156,8 @@ public class EntryService {
         int sumFail = 0;
         int sumOnhold = 0;
         int sumPending = 0;
+        int sumNa = 0;
+        int sumFunctionalTeam = 0;
 
         for (Entry entry : entries) {
             sumTotal += entry.getTotal() != null ? entry.getTotal() : 0;
@@ -157,6 +165,8 @@ public class EntryService {
             sumFail += entry.getFail() != null ? entry.getFail() : 0;
             sumOnhold += entry.getOnhold() != null ? entry.getOnhold() : 0;
             sumPending += entry.getPending() != null ? entry.getPending() : 0;
+            sumNa += entry.getNa() != null ? entry.getNa() : 0;
+            sumFunctionalTeam += entry.getFunctionalTeam() != null ? entry.getFunctionalTeam() : 0;
         }
 
         double passRate = sumTotal > 0 ? ((double) sumPass / sumTotal) * 100.0 : 0.0;
@@ -168,12 +178,14 @@ public class EntryService {
                 .fail(sumFail)
                 .onhold(sumOnhold)
                 .pending(sumPending)
+                .na(sumNa)
+                .functionalTeam(sumFunctionalTeam)
                 .passRate(passRate)
                 .build();
     }
 
-    private String calculateStatus(int total, int pass, int fail, int onhold, int pending) {
-        if (total > 0 && pass == total) {
+    private String calculateStatus(int total, int pass, int fail, int onhold, int pending, int na, int functionalTeam) {
+        if (total > 0 && (pass + na + functionalTeam) == total) {
             return "Pass";
         } else if (pending > 0 && (pass > 0 || fail > 0)) {
             return "Inprogress";
@@ -212,6 +224,8 @@ public class EntryService {
                 .fail(entry.getFail())
                 .onhold(entry.getOnhold())
                 .pending(entry.getPending())
+                .na(entry.getNa())
+                .functionalTeam(entry.getFunctionalTeam())
                 .status(entry.getStatus())
                 .comments(entry.getComments())
                 .entryDate(entry.getEntryDate())

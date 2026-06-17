@@ -17,5 +17,7 @@ public class SummaryDTO {
     private Integer fail;
     private Integer onhold;
     private Integer pending;
+    private Integer na;
+    private Integer functionalTeam;
     private Double passRate;
 }
