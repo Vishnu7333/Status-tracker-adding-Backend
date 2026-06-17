@@ -379,10 +379,20 @@ td {
   color: #76d7ff;
 }
 
+.status-na {
+  color: #b085f5;
+}
+
+.status-functional {
+  color: #f472b6;
+}
+
 .status-pass,
 .status-fail,
 .status-onhold,
-.status-inprogress {
+.status-inprogress,
+.status-na,
+.status-functional {
   font-weight: 700;
 }
 

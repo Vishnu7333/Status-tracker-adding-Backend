@@ -64,11 +64,11 @@ public class Entry {
     private Integer pending = 0;
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer na = 0;
 
     @Builder.Default
-    @Column(name = "functional_team", nullable = false)
+    @Column(name = "functional_team", nullable = false, columnDefinition = "integer default 0")
     private Integer functionalTeam = 0;
 
     private String status;

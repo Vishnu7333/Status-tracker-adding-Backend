@@ -8,6 +8,8 @@ const passCountInput = document.getElementById('pass-count-input');
 const failCountInput = document.getElementById('fail-count-input');
 const onholdCountInput = document.getElementById('onhold-count-input');
 const pendingCountInput = document.getElementById('pending-count-input');
+const naCountInput = document.getElementById('na-count-input');
+const functionalTeamCountInput = document.getElementById('functional-team-count-input');
 const commentInput = document.getElementById('comment-text');
 const formMessage = document.getElementById('form-message');
 const testcaseTableBody = document.querySelector('#testcase-table tbody');
@@ -114,29 +116,37 @@ function clearFieldError(field) {
 }
 
 function clearAllFieldErrors() {
-  [projectNameInput, moduleInput, submoduleInput, totalCountInput, passCountInput, failCountInput, onholdCountInput, pendingCountInput].forEach((field) => {
+  [projectNameInput, moduleInput, submoduleInput, totalCountInput, passCountInput, failCountInput, onholdCountInput, pendingCountInput, naCountInput, functionalTeamCountInput].forEach((field) => {
     if (field) clearFieldError(field);
   });
 }
 
 function getStatus(record) {
-  if (record.total > 0 && record.pass === record.total) {
+  const pass = record.pass || 0;
+  const na = record.na || 0;
+  const functionalTeam = record.functionalTeam || 0;
+  const fail = record.fail || 0;
+  const onhold = record.onhold || 0;
+  const pending = record.pending || 0;
+  const total = record.total || 0;
+
+  if (total > 0 && (pass + na + functionalTeam) === total) {
     return 'Pass';
   }
 
-  if (record.pending > 0 && (record.pass > 0 || record.fail > 0)) {
+  if (pending > 0 && (pass > 0 || fail > 0)) {
     return 'Inprogress';
   }
 
-  if (record.fail > 0) {
+  if (fail > 0) {
     return 'Fail';
   }
 
-  if (record.onhold > 0) {
+  if (onhold > 0) {
     return 'On Hold';
   }
 
-  if (record.pending > 0) {
+  if (pending > 0) {
     return 'Pending';
   }
 
@@ -159,23 +169,31 @@ function groupByModule() {
 }
 
 function getModuleStatus(summary) {
-  if (summary.total > 0 && summary.pass === summary.total) {
+  const pass = summary.pass || 0;
+  const na = summary.na || 0;
+  const functionalTeam = summary.functionalTeam || 0;
+  const fail = summary.fail || 0;
+  const onhold = summary.onhold || 0;
+  const pending = summary.pending || 0;
+  const total = summary.total || 0;
+
+  if (total > 0 && (pass + na + functionalTeam) === total) {
     return 'Pass';
   }
 
-  if (summary.pending > 0 && (summary.pass > 0 || summary.fail > 0)) {
+  if (pending > 0 && (pass > 0 || fail > 0)) {
     return 'Inprogress';
   }
 
-  if (summary.fail > 0) {
+  if (fail > 0) {
     return 'Fail';
   }
 
-  if (summary.onhold > 0) {
+  if (onhold > 0) {
     return 'On Hold';
   }
 
-  if (summary.pending > 0) {
+  if (pending > 0) {
     return 'Pending';
   }
 
@@ -191,9 +209,9 @@ function createModuleHeaderRow(moduleName, moduleSummary) {
   const tr = document.createElement('tr');
   tr.className = 'module-header-row';
   tr.innerHTML = `
-    <td colspan="10">
+    <td colspan="12">
       <strong>${moduleName}</strong>
-      <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | Status: ${status}</span>
+      <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Functional Team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
     </td>
   `;
   return tr;
@@ -210,6 +228,8 @@ function createRow(record, index) {
     <td class="status-fail">${record.fail}</td>
     <td class="status-onhold">${record.onhold}</td>
     <td class="status-pending">${record.pending}</td>
+    <td class="status-na">${record.na || 0}</td>
+    <td class="status-functional">${record.functionalTeam || 0}</td>
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
@@ -246,7 +266,7 @@ function createProjectHeaderRow(projectName) {
   const tr = document.createElement('tr');
   tr.className = 'project-header-row-ui';
   tr.innerHTML = `
-    <td colspan="10">
+    <td colspan="12">
       <strong>Customer: ${projectName}</strong>
     </td>
   `;
@@ -259,7 +279,7 @@ function updateTable() {
 
   if (!records.length) {
     const emptyRow = document.createElement('tr');
-    emptyRow.innerHTML = '<td colspan="10" class="empty-state">Add a module and submodule total to begin tracking progress.</td>';
+    emptyRow.innerHTML = '<td colspan="12" class="empty-state">Add a module and submodule total to begin tracking progress.</td>';
     testcaseTableBody.appendChild(emptyRow);
     return;
   }
@@ -276,9 +296,11 @@ function updateTable() {
           summary.fail += record.fail;
           summary.onhold += record.onhold;
           summary.pending += record.pending;
+          summary.na += record.na || 0;
+          summary.functionalTeam += record.functionalTeam || 0;
           return summary;
         },
-        { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 }
+        { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0, na: 0, functionalTeam: 0 }
       );
 
       testcaseTableBody.appendChild(createModuleHeaderRow(moduleName, moduleSummary));
@@ -299,6 +321,8 @@ function summarize() {
       summary.fail += record.fail;
       summary.onhold += record.onhold;
       summary.pending += record.pending;
+      summary.na += record.na || 0;
+      summary.functionalTeam += record.functionalTeam || 0;
       return summary;
     },
     {
@@ -308,6 +332,8 @@ function summarize() {
       fail: 0,
       onhold: 0,
       pending: 0,
+      na: 0,
+      functionalTeam: 0,
     },
   );
 }
@@ -320,6 +346,8 @@ function updateSummaryUI(summary) {
   if (failCountEl) failCountEl.textContent = summary.fail ?? 0;
   if (onholdCountEl) onholdCountEl.textContent = summary.onhold ?? 0;
   if (pendingCountEl) pendingCountEl.textContent = summary.pending ?? 0;
+  if (document.getElementById('na-count')) document.getElementById('na-count').textContent = summary.na ?? 0;
+  if (document.getElementById('functional-team-count')) document.getElementById('functional-team-count').textContent = summary.functionalTeam ?? 0;
 }
 
 function updateDraftSummary() {
@@ -353,8 +381,10 @@ async function parseTestcaseForm(event) {
   const fail = failCountInput ? readOptionalCount(failCountInput) : null;
   const onhold = onholdCountInput ? readOptionalCount(onholdCountInput) : null;
   const pending = pendingCountInput ? readOptionalCount(pendingCountInput) : null;
+  const na = naCountInput ? readOptionalCount(naCountInput) : null;
+  const functionalTeam = functionalTeamCountInput ? readOptionalCount(functionalTeamCountInput) : null;
 
-  const values = { total, pass, fail, onhold, pending };
+  const values = { total, pass, fail, onhold, pending, na, functionalTeam };
   if (Object.values(values).some((value) => Number.isNaN(value))) {
     let scrolled = false;
     if (isNaN(total) && totalCountInput) {
@@ -392,10 +422,24 @@ async function parseTestcaseForm(event) {
         scrolled = true;
       }
     }
+    if (isNaN(na) && naCountInput) {
+      setFieldError(naCountInput, 'Enter a valid non-negative number.');
+      if (!scrolled) {
+        scrollToField(naCountInput);
+        scrolled = true;
+      }
+    }
+    if (isNaN(functionalTeam) && functionalTeamCountInput) {
+      setFieldError(functionalTeamCountInput, 'Enter a valid non-negative number.');
+      if (!scrolled) {
+        scrollToField(functionalTeamCountInput);
+        scrolled = true;
+      }
+    }
     return;
   }
 
-  const countFields = ['pass', 'fail', 'onhold', 'pending'];
+  const countFields = ['pass', 'fail', 'onhold', 'pending', 'na', 'functionalTeam'];
   const blankCountFields = countFields.filter((fieldName) => values[fieldName] === null);
   const countTotal = countFields.reduce((sum, fieldName) => sum + (values[fieldName] ?? 0), 0);
 
@@ -459,6 +503,8 @@ async function parseTestcaseForm(event) {
     fail: values.fail,
     onhold: values.onhold,
     pending: values.pending,
+    na: values.na,
+    functionalTeam: values.functionalTeam,
     comments: commentInput ? commentInput.value.trim() : '',
   };
 
@@ -479,6 +525,8 @@ async function parseTestcaseForm(event) {
   if (failCountInput) failCountInput.value = '';
   if (onholdCountInput) onholdCountInput.value = '';
   if (pendingCountInput) pendingCountInput.value = '';
+  if (naCountInput) naCountInput.value = '';
+  if (functionalTeamCountInput) functionalTeamCountInput.value = '';
   if (commentInput) commentInput.value = '';
 }
 
@@ -537,6 +585,8 @@ function createImageReport() {
     ['Fail', summary.fail],
     ['On Hold', summary.onhold],
     ['Pending', summary.pending],
+    ['N/A', summary.na || 0],
+    ['Functional Team', summary.functionalTeam || 0],
   ].forEach(([label, value]) => {
     const item = document.createElement('div');
     const strong = document.createElement('strong');
@@ -561,6 +611,8 @@ function createImageReport() {
       <th>Fail</th>
       <th>On Hold</th>
       <th>Pending</th>
+      <th>N/A</th>
+      <th>Functional Team</th>
       <th>Status</th>
       <th>Comments</th>
     </tr>
@@ -570,7 +622,7 @@ function createImageReport() {
   if (!records.length) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = 9;
+    cell.colSpan = 11;
     cell.className = 'empty-state';
     cell.textContent = 'No status records available.';
     row.appendChild(cell);
@@ -578,7 +630,7 @@ function createImageReport() {
   } else {
     Object.entries(groupByProjectAndModule(records)).forEach(([projectName, modules]) => {
       const projectRow = document.createElement('tr');
-      projectRow.innerHTML = `<td colspan="9" style="background: #e2efda; color: #375623; font-weight: 800; padding: 0.7rem;">Customer: ${projectName}</td>`;
+      projectRow.innerHTML = `<td colspan="11" style="background: #e2efda; color: #375623; font-weight: 800; padding: 0.7rem;">Customer: ${projectName}</td>`;
       tbody.appendChild(projectRow);
 
       Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
@@ -589,16 +641,18 @@ function createImageReport() {
             accumulator.fail += record.fail;
             accumulator.onhold += record.onhold;
             accumulator.pending += record.pending;
+            accumulator.na += record.na || 0;
+            accumulator.functionalTeam += record.functionalTeam || 0;
             return accumulator;
           },
-          { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 },
+          { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0, na: 0, functionalTeam: 0 },
         );
 
         const moduleRow = document.createElement('tr');
         moduleRow.className = 'image-report-module-row';
         const moduleCell = document.createElement('td');
-        moduleCell.colSpan = 9;
-        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | Status: ${getModuleStatus(moduleSummary)}`;
+        moduleCell.colSpan = 11;
+        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Functional Team: ${moduleSummary.functionalTeam || 0} | Status: ${getModuleStatus(moduleSummary)}`;
         moduleRow.appendChild(moduleCell);
         tbody.appendChild(moduleRow);
 
@@ -616,6 +670,8 @@ function createImageReport() {
             record.fail,
             record.onhold,
             record.pending,
+            record.na || 0,
+            record.functionalTeam || 0,
             getStatus(record),
             record.comments || '-',
           ].forEach((value) => {
@@ -707,7 +763,7 @@ function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, p
   const isTitleRow = rowIndex === 0;
   const isGrandTotalRow = rowIndex === grandTotalRowIndex;
   const isProjectHeaderRow = projectHeaderRows && projectHeaderRows.has(rowIndex);
-  const isCommentsColumn = columnIndex === 8;
+  const isCommentsColumn = columnIndex === 10;
 
   const style = {
     alignment: {
@@ -762,15 +818,15 @@ async function downloadExcel() {
       return groups;
     }, {});
 
-    const summaryRows = [['Module Status Tracker'], [], ['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'Status', 'Comments']];
-    const summaryMerges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+    const summaryRows = [['Module Status Tracker'], [], ['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Functional Team', 'Status', 'Comments']];
+    const summaryMerges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }];
     const projectHeaderRows = new Set();
 
     Object.entries(groupedByProject).forEach(([projName, projRecords]) => {
       // Add project header row
       const projectRowIndex = summaryRows.length;
-      summaryRows.push([`Project: ${projName}`, '', '', '', '', '', '', '', '']);
-      summaryMerges.push({ s: { r: projectRowIndex, c: 0 }, e: { r: projectRowIndex, c: 8 } });
+      summaryRows.push([`Project: ${projName}`, '', '', '', '', '', '', '', '', '', '']);
+      summaryMerges.push({ s: { r: projectRowIndex, c: 0 }, e: { r: projectRowIndex, c: 10 } });
       projectHeaderRows.add(projectRowIndex);
 
       // Group this project's records by module
@@ -784,7 +840,7 @@ async function downloadExcel() {
       Object.entries(moduleGroups).forEach(([moduleName, moduleRecords]) => {
         const moduleStartRow = summaryRows.length;
         moduleRecords.forEach((record) => {
-          summaryRows.push([moduleName, record.submodule, record.total, record.pass, record.fail, record.onhold, record.pending, getStatus(record), record.comments || '-']);
+          summaryRows.push([moduleName, record.submodule, record.total, record.pass, record.fail, record.onhold, record.pending, record.na || 0, record.functionalTeam || 0, getStatus(record), record.comments || '-']);
         });
 
         if (moduleRecords.length > 1) {
@@ -803,6 +859,8 @@ async function downloadExcel() {
       summaryTotals.fail,
       summaryTotals.onhold,
       summaryTotals.pending,
+      summaryTotals.na || 0,
+      summaryTotals.functionalTeam || 0,
       '',
       '',
     ]);
@@ -818,6 +876,8 @@ async function downloadExcel() {
       { wch: 12 },
       { wch: 14 },
       { wch: 14 },
+      { wch: 12 },
+      { wch: 18 },
       { wch: 14 },
       { wch: 28 },
     ];
@@ -853,7 +913,7 @@ async function downloadExcel() {
 
     // Style project header rows
     projectHeaderRows.forEach((rowIdx) => {
-      for (let c = 0; c < 9; c++) {
+      for (let c = 0; c < 11; c++) {
         const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: c });
         if (!summarySheet[cellRef]) {
           summarySheet[cellRef] = { t: 's', v: '' };
@@ -881,7 +941,7 @@ async function downloadExcel() {
     });
 
     summarySheet['!rows'][grandTotalRowIndex] = { hpt: 26 };
-    Array.from({ length: 9 }, (_, columnIndex) => columnIndex).forEach((columnIndex) => {
+    Array.from({ length: 11 }, (_, columnIndex) => columnIndex).forEach((columnIndex) => {
       const cellRef = XLSX.utils.encode_cell({ r: grandTotalRowIndex, c: columnIndex });
       if (!summarySheet[cellRef]) {
         summarySheet[cellRef] = { t: 's', v: '' };
@@ -932,6 +992,8 @@ function createHistoryRow(record) {
     <td class="status-fail">${record.fail}</td>
     <td class="status-onhold">${record.onhold}</td>
     <td class="status-pending">${record.pending}</td>
+    <td class="status-na">${record.na || 0}</td>
+    <td class="status-functional">${record.functionalTeam || 0}</td>
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
@@ -955,7 +1017,7 @@ function updateHistoryTable() {
 
   if (!historyRecords.length) {
     const emptyRow = document.createElement('tr');
-    emptyRow.innerHTML = '<td colspan="11" class="empty-state">No saved entries in the database history.</td>';
+    emptyRow.innerHTML = '<td colspan="13" class="empty-state">No saved entries in the database history.</td>';
     historyTableBody.appendChild(emptyRow);
     return;
   }
@@ -964,7 +1026,7 @@ function updateHistoryTable() {
   Object.entries(grouped).forEach(([projectName, modules]) => {
     const projectHeader = document.createElement('tr');
     projectHeader.className = 'project-header-row-ui';
-    projectHeader.innerHTML = `<td colspan="11"><strong>Customer: ${projectName}</strong></td>`;
+    projectHeader.innerHTML = `<td colspan="13"><strong>Customer: ${projectName}</strong></td>`;
     historyTableBody.appendChild(projectHeader);
 
     Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
@@ -975,18 +1037,20 @@ function updateHistoryTable() {
           summary.fail += record.fail;
           summary.onhold += record.onhold;
           summary.pending += record.pending;
+          summary.na += record.na || 0;
+          summary.functionalTeam += record.functionalTeam || 0;
           return summary;
         },
-        { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 }
+        { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0, na: 0, functionalTeam: 0 }
       );
 
       const moduleHeader = document.createElement('tr');
       moduleHeader.className = 'module-header-row';
       const status = getModuleStatus(moduleSummary);
       moduleHeader.innerHTML = `
-        <td colspan="11">
+        <td colspan="13">
           <strong>${moduleName}</strong>
-          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | Status: ${status}</span>
+          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Functional Team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
         </td>
       `;
       historyTableBody.appendChild(moduleHeader);
@@ -1204,13 +1268,15 @@ function handleSwitchUser() {
   if (failCountInput) failCountInput.value = '';
   if (onholdCountInput) onholdCountInput.value = '';
   if (pendingCountInput) pendingCountInput.value = '';
+  if (naCountInput) naCountInput.value = '';
+  if (functionalTeamCountInput) functionalTeamCountInput.value = '';
   if (commentInput) commentInput.value = '';
   if (projectDisplay) projectDisplay.textContent = 'Untitled Customer';
   document.title = 'Module Status Tracker';
   clearAllFieldErrors();
   
   if (historyTableBody) {
-    historyTableBody.innerHTML = '<td colspan="11" class="empty-state">No saved entries in the database history.</td>';
+    historyTableBody.innerHTML = '<td colspan="13" class="empty-state">No saved entries in the database history.</td>';
   }
   
   showLoginModal();

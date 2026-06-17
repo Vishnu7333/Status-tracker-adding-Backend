@@ -71,6 +71,16 @@
               <input id="pending-count-input" type="number" min="0" step="1" placeholder="Enter pending count" />
               <span class="field-error" id="pending-count-input-error" aria-live="polite"></span>
             </label>
+            <label>
+              N/A Count
+              <input id="na-count-input" type="number" min="0" step="1" placeholder="Enter N/A count" />
+              <span class="field-error" id="na-count-input-error" aria-live="polite"></span>
+            </label>
+            <label>
+              Functional Team Count
+              <input id="functional-team-count-input" type="number" min="0" step="1" placeholder="Enter functional team count" />
+              <span class="field-error" id="functional-team-count-input-error" aria-live="polite"></span>
+            </label>
           </div>
           <p class="form-hint">Enter Total and counts that add up to it. 
             If exactly one count is blank, it will auto-calculate.</p>
@@ -92,6 +102,8 @@
           <div><strong>Fail</strong><span id="fail-count">0</span></div>
           <div><strong>On-Hold</strong><span id="onhold-count">0</span></div>
           <div><strong>Pending</strong><span id="pending-count">0</span></div>
+          <div><strong>N/A</strong><span id="na-count">0</span></div>
+          <div><strong>Functional Team</strong><span id="functional-team-count">0</span></div>
         </div>
         <div class="export-actions">
           <button id="export-json">Export Summary</button>
@@ -114,6 +126,8 @@
               <th>Fail</th>
               <th>On Hold</th>
               <th>Pending</th>
+              <th>N/A</th>
+              <th>Functional Team</th>
               <th>Status</th>
               <th>Comments</th>
               <th>Remove</th>
@@ -141,6 +155,8 @@
               <th>Fail</th>
               <th>On Hold</th>
               <th>Pending</th>
+              <th>N/A</th>
+              <th>Functional Team</th>
               <th>Status</th>
               <th>Comments</th>
               <th>Remove</th>

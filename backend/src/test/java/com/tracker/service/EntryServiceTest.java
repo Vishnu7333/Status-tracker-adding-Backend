@@ -157,6 +157,10 @@ class EntryServiceTest {
         // Test case: pending > 0 -> Pending
         EntryRequestDTO d5 = EntryRequestDTO.builder().total(10).pass(0).fail(0).onhold(0).pending(10).build();
         assertEquals("Pending", entryService.upsertEntry(user, d5).getStatus());
+
+        // Test case: total > 0 and (pass + na + functionalTeam) == total -> Pass
+        EntryRequestDTO d6 = EntryRequestDTO.builder().total(10).pass(4).fail(0).onhold(0).pending(0).na(3).functionalTeam(3).build();
+        assertEquals("Pass", entryService.upsertEntry(user, d6).getStatus());
     }
 
     @Test
