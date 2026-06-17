@@ -46,28 +46,13 @@ public class EntryService {
         if (existingEntryOpt.isPresent()) {
             Entry existing = existingEntryOpt.get();
 
-            int currentPass = existing.getPass() != null ? existing.getPass() : 0;
-            int currentFail = existing.getFail() != null ? existing.getFail() : 0;
-            int currentOnhold = existing.getOnhold() != null ? existing.getOnhold() : 0;
-            int currentPending = existing.getPending() != null ? existing.getPending() : 0;
-
-            existing.setPass(currentPass + passVal);
-            existing.setFail(currentFail + failVal);
-            existing.setOnhold(currentOnhold + onholdVal);
-            existing.setPending(currentPending + pendingVal);
-
-            int newTotal = existing.getPass() + existing.getFail() + existing.getOnhold() + existing.getPending();
-            existing.setTotal(newTotal);
-
-            existing.setStatus(calculateStatus(newTotal, existing.getPass(), existing.getFail(), existing.getOnhold(), existing.getPending()));
-
-            String existingComment = existing.getComments();
-            String newComment = dto.getComments();
-            if (existingComment != null && !existingComment.trim().isEmpty() && newComment != null && !newComment.trim().isEmpty()) {
-                existing.setComments(existingComment + " | " + newComment);
-            } else if (newComment != null && !newComment.trim().isEmpty()) {
-                existing.setComments(newComment);
-            }
+            existing.setPass(passVal);
+            existing.setFail(failVal);
+            existing.setOnhold(onholdVal);
+            existing.setPending(pendingVal);
+            existing.setTotal(totalVal);
+            existing.setStatus(calculatedStatus);
+            existing.setComments(dto.getComments());
 
             existing.setUpdatedAt(LocalDateTime.now());
             entryToSave = existing;

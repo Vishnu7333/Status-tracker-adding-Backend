@@ -103,7 +103,7 @@ class EntryServiceTest {
     }
 
     @Test
-    void upsertEntry_WhenEntryExists_UpdatesExistingEntryAndAccumulatesCounts() {
+    void upsertEntry_WhenEntryExists_UpdatesExistingEntryWithNewCounts() {
         when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2"), eq(LocalDate.now())))
                 .thenReturn(Optional.of(existingEntry));
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -124,13 +124,13 @@ class EntryServiceTest {
 
         assertNotNull(response);
         assertEquals(existingEntry.getId(), response.getId());
-        assertEquals(8, response.getPass()); // 5 + 3
-        assertEquals(3, response.getFail()); // 2 + 1
-        assertEquals(1, response.getOnhold()); // 1 + 0
-        assertEquals(3, response.getPending()); // 2 + 1
-        assertEquals(15, response.getTotal()); // 8 + 3 + 1 + 3
+        assertEquals(3, response.getPass()); // Overwritten with 3
+        assertEquals(1, response.getFail()); // Overwritten with 1
+        assertEquals(0, response.getOnhold()); // Overwritten with 0
+        assertEquals(1, response.getPending()); // Overwritten with 1
+        assertEquals(5, response.getTotal()); // Overwritten with 5
         assertEquals("Inprogress", response.getStatus());
-        assertEquals("First batch | Second batch", response.getComments());
+        assertEquals("Second batch", response.getComments()); // Overwritten with "Second batch"
         verify(entryRepository, times(1)).save(existingEntry);
     }
 

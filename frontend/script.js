@@ -1196,6 +1196,19 @@ function handleSwitchUser() {
   updateTable();
   updateDraftSummary();
   
+  if (projectNameInput) projectNameInput.value = '';
+  if (moduleInput) moduleInput.value = '';
+  if (submoduleInput) submoduleInput.value = '';
+  if (totalCountInput) totalCountInput.value = '';
+  if (passCountInput) passCountInput.value = '';
+  if (failCountInput) failCountInput.value = '';
+  if (onholdCountInput) onholdCountInput.value = '';
+  if (pendingCountInput) pendingCountInput.value = '';
+  if (commentInput) commentInput.value = '';
+  if (projectDisplay) projectDisplay.textContent = 'Untitled Customer';
+  document.title = 'Module Status Tracker';
+  clearAllFieldErrors();
+  
   if (historyTableBody) {
     historyTableBody.innerHTML = '<td colspan="11" class="empty-state">No saved entries in the database history.</td>';
   }
