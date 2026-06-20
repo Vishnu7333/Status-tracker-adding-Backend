@@ -1,4 +1,6 @@
-const BASE_URL = 'https://status-tracker-api.onrender.com';
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'
+  ? 'http://localhost:8080'
+  : 'https://status-tracker-api.onrender.com';
 const API_HEADERS = {
   get 'Content-Type'() { return 'application/json'; },
   get 'X-User-Email'() { return localStorage.getItem('userEmail') || ''; },

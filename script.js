@@ -25,7 +25,9 @@ const exportImageButton = document.getElementById('export-image');
 
 const records = [];
 const historyRecords = [];
-const BASE_URL = 'https://status-tracker-api.onrender.com';
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'
+  ? 'http://localhost:8080'
+  : 'https://status-tracker-api.onrender.com';
 const API_HEADERS = {
   get 'Content-Type'() { return 'application/json'; },
   get 'X-User-Email'() { return localStorage.getItem('userEmail') || ''; },
@@ -381,33 +383,33 @@ async function parseTestcaseForm(event) {
   const fail = failCountInput ? readOptionalCount(failCountInput) : null;
   const onhold = onholdCountInput ? readOptionalCount(onholdCountInput) : null;
   const pending = pendingCountInput ? readOptionalCount(pendingCountInput) : null;
-  const na = naCountInput ? readOptionalCount(naCountInput) : null;
-  const functionalTeam = functionalTeamCountInput ? readOptionalCount(functionalTeamCountInput) : null;
+  let na = naCountInput ? readOptionalCount(naCountInput) : null;
+  let functionalTeam = functionalTeamCountInput ? readOptionalCount(functionalTeamCountInput) : null;
 
   const values = { total, pass, fail, onhold, pending, na, functionalTeam };
 
-  const comments = commentInput ? commentInput.value.trim() : '';
-  const commentsLower = comments.toLowerCase();
-  const isNAOrFT = commentsLower.includes('n/a') || commentsLower.includes('taken care by functional team') || commentsLower.includes('functional team');
-
-  if (isNAOrFT) {
+  if (values.na === null) {
     values.na = 0;
-    values.functionalTeam = 0;
     if (naCountInput) naCountInput.value = '0';
+  }
+  if (values.functionalTeam === null) {
+    values.functionalTeam = 0;
     if (functionalTeamCountInput) functionalTeamCountInput.value = '0';
+  }
 
-    if (values.total !== null && !isNaN(values.total)) {
-      const pVal = values.pass ?? 0;
-      const fVal = values.fail ?? 0;
-      const ohVal = values.onhold ?? 0;
-      values.pending = values.total - pVal - fVal - ohVal;
-      if (values.pending < 0) values.pending = 0;
-      if (pendingCountInput) pendingCountInput.value = values.pending;
+  if (values.total !== null && !isNaN(values.total)) {
+    const pVal = values.pass ?? 0;
+    const fVal = values.fail ?? 0;
+    const ohVal = values.onhold ?? 0;
+    const naVal = values.na ?? 0;
+    const ftVal = values.functionalTeam ?? 0;
+    values.pending = values.total - pVal - fVal - ohVal - naVal - ftVal;
+    if (values.pending < 0) values.pending = 0;
+    if (pendingCountInput) pendingCountInput.value = values.pending;
 
-      values.pass = pVal;
-      values.fail = fVal;
-      values.onhold = ohVal;
-    }
+    values.pass = pVal;
+    values.fail = fVal;
+    values.onhold = ohVal;
   }
   if (Object.values(values).some((value) => Number.isNaN(value))) {
     let scrolled = false;
@@ -1334,29 +1336,40 @@ function init() {
     }
   }
   
-  // Dynamic fields auto-calculation and zeroing out based on comment
-  function applyCommentOverride() {
-    const commentLower = (commentInput ? commentInput.value.trim() : '').toLowerCase();
-    const isNA = commentLower.includes('n/a');
-    const isFT = commentLower.includes('taken care by functional team') || commentLower.includes('functional team');
-    if (isNA || isFT) {
-      if (naCountInput) naCountInput.value = '0';
-      if (functionalTeamCountInput) functionalTeamCountInput.value = '0';
-      
-      const totalVal = readOptionalCount(totalCountInput);
-      if (totalVal !== null && !isNaN(totalVal)) {
-        const passVal = readOptionalCount(passCountInput) ?? 0;
-        const failVal = readOptionalCount(failCountInput) ?? 0;
-        const onholdVal = readOptionalCount(onholdCountInput) ?? 0;
-        const pendingVal = totalVal - passVal - failVal - onholdVal;
-        if (pendingCountInput) pendingCountInput.value = pendingVal >= 0 ? pendingVal : 0;
-      }
+  if (pendingCountInput) {
+    pendingCountInput.readOnly = true;
+    pendingCountInput.placeholder = 'Auto-calculated';
+  }
+
+  // Dynamic fields auto-calculation of Pending count
+  function calculatePending() {
+    const totalVal = readOptionalCount(totalCountInput);
+    if (totalVal !== null && !isNaN(totalVal)) {
+      const passVal = readOptionalCount(passCountInput) ?? 0;
+      const failVal = readOptionalCount(failCountInput) ?? 0;
+      const onholdVal = readOptionalCount(onholdCountInput) ?? 0;
+      const naVal = readOptionalCount(naCountInput) ?? 0;
+      const ftVal = readOptionalCount(functionalTeamCountInput) ?? 0;
+      const pendingVal = totalVal - passVal - failVal - onholdVal - naVal - ftVal;
+      if (pendingCountInput) pendingCountInput.value = pendingVal >= 0 ? pendingVal : 0;
+    } else {
+      if (pendingCountInput) pendingCountInput.value = '';
     }
   }
 
-  if (commentInput) commentInput.addEventListener('input', applyCommentOverride);
-  [totalCountInput, passCountInput, failCountInput, onholdCountInput].forEach(input => {
-    if (input) input.addEventListener('input', applyCommentOverride);
+  [totalCountInput, passCountInput, failCountInput, onholdCountInput, naCountInput, functionalTeamCountInput].forEach(input => {
+    if (input) input.addEventListener('input', calculatePending);
+  });
+
+  [naCountInput, functionalTeamCountInput].forEach(input => {
+    if (input) {
+      input.addEventListener('blur', () => {
+        if (input.value.trim() === '') {
+          input.value = '0';
+          calculatePending();
+        }
+      });
+    }
   });
 
   if (loginForm) loginForm.addEventListener('submit', handleLoginSubmit);
