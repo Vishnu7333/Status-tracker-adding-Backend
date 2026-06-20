@@ -673,3 +673,30 @@ td {
     transform: translateY(0);
   }
 }
+
+/* User Role Select compact dropdown */
+.role-select {
+  padding: 0.35rem 1.8rem 0.35rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(30, 38, 54, 0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath fill='%23e7ecff' d='M0 0h8L4 6z'/%3E%3C/svg%3E") no-repeat right 0.7rem center;
+  color: #e7ecff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.role-select:hover {
+  background-color: rgba(45, 55, 75, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.role-select:focus {
+  border-color: #4f7dff;
+  box-shadow: 0 0 0 2px rgba(79, 125, 255, 0.25);
+}

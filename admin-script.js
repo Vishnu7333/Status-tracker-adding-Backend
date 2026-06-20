@@ -83,6 +83,17 @@ async function loadDashboardData() {
     const entriesResult = await entriesResponse.json();
     if (entriesResult && entriesResult.success && entriesResult.data) {
       updateGlobalEntriesTableUI(entriesResult.data);
+      updateDailyProjectSummaryTableUI(entriesResult.data);
+    }
+
+    // 4. Fetch all users
+    const usersResponse = await fetch(`${BASE_URL}/api/admin/users`, {
+      method: 'GET',
+      headers: API_HEADERS
+    });
+    const usersResult = await usersResponse.json();
+    if (usersResult && usersResult.success && usersResult.data) {
+      updateUsersTableUI(usersResult.data);
     }
 
     hideMessage();
@@ -90,6 +101,209 @@ async function loadDashboardData() {
     console.error('Error loading admin dashboard:', error);
     showMessage('Error connecting to the backend. Please check if the service is online.', true);
   }
+}
+
+function updateUsersTableUI(users) {
+  const tbody = document.querySelector('#users-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (users.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No users registered in the system yet.</td></tr>`;
+    return;
+  }
+
+  // Sort users alphabetically by display name
+  users.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+
+  users.forEach(user => {
+    const userId = user.id;
+    const displayName = user.displayName || 'Anonymous Developer';
+    const email = user.email || 'N/A';
+    const role = user.role || 'EMPLOYEE';
+    
+    // Format Date
+    let dateStr = 'N/A';
+    if (user.createdAt) {
+      try {
+        dateStr = new Date(user.createdAt).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const row = document.createElement('tr');
+    row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    row.style.height = '3.5rem';
+    row.innerHTML = `
+      <td>
+        <div class="user-badge">
+          <span class="user-badge-name">${escapeHtml(displayName)}</span>
+          <span class="user-badge-email">${escapeHtml(email)}</span>
+        </div>
+      </td>
+      <td>
+        <select class="role-select" data-user-id="${userId}" onchange="handleRoleChange(this)">
+          <option value="EMPLOYEE" ${role === 'EMPLOYEE' ? 'selected' : ''}>EMPLOYEE</option>
+          <option value="ADMIN" ${role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
+        </select>
+      </td>
+      <td style="color: rgba(231,236,255,0.7); font-size: 0.9rem;">${dateStr}</td>
+      <td>
+        <span class="status-badge status-pass">Active</span>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+async function handleRoleChange(select) {
+  const userId = select.getAttribute('data-user-id');
+  const newRole = select.value;
+  const originalRole = newRole === 'ADMIN' ? 'EMPLOYEE' : 'ADMIN';
+  
+  const confirmMsg = `Are you sure you want to change this user's role to ${newRole}?`;
+  if (!confirm(confirmMsg)) {
+    select.value = originalRole;
+    return;
+  }
+
+  try {
+    showMessage('Updating user role...', false);
+    const response = await fetch(`${BASE_URL}/api/admin/users/${userId}/role`, {
+      method: 'PUT',
+      headers: {
+        ...API_HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ role: newRole })
+    });
+    
+    const result = await response.json();
+    if (result && result.success) {
+      showMessage(`User role updated to ${newRole} successfully!`, false);
+      // Reload dashboard data after a delay to refresh stats
+      setTimeout(loadDashboardData, 1500);
+    } else {
+      throw new Error(result.message || 'Failed to update user role');
+    }
+  } catch (error) {
+    console.error('Error changing role:', error);
+    showMessage(`Failed to update role: ${error.message}`, true);
+    select.value = originalRole;
+  }
+}
+
+// Make sure handleRoleChange is globally available for inline onchange event handler
+window.handleRoleChange = handleRoleChange;
+
+function updateDailyProjectSummaryTableUI(entries) {
+  const tbody = document.querySelector('#daily-project-summary-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No status entries found in the system.</td></tr>`;
+    return;
+  }
+
+  // Group entries by date and project
+  const groupings = {};
+
+  entries.forEach(entry => {
+    const dateStr = entry.entryDate; // e.g. "2026-06-20"
+    const project = entry.project || 'Untitled Project';
+    const key = `${dateStr}_${project}`;
+
+    if (!groupings[key]) {
+      groupings[key] = {
+        date: dateStr,
+        project: project,
+        total: 0,
+        pass: 0,
+        fail: 0,
+        onhold: 0,
+        pending: 0,
+        na: 0,
+        functionalTeam: 0
+      };
+    }
+
+    const group = groupings[key];
+    group.total += entry.total || 0;
+    group.pass += entry.pass || 0;
+    group.fail += entry.fail || 0;
+    group.onhold += entry.onhold || 0;
+    group.pending += entry.pending || 0;
+    group.na += entry.na || 0;
+    group.functionalTeam += entry.functionalTeam || 0;
+  });
+
+  // Convert groupings to array
+  const groupedList = Object.values(groupings);
+
+  // Sort: date descending, then project name ascending
+  groupedList.sort((a, b) => {
+    const dateCompare = b.date.localeCompare(a.date);
+    if (dateCompare !== 0) return dateCompare;
+    return a.project.localeCompare(b.project);
+  });
+
+  // Render rows
+  groupedList.forEach(group => {
+    const total = group.total;
+    const pass = group.pass;
+    const fail = group.fail;
+    const onhold = group.onhold;
+    const pending = group.pending;
+    const na = group.na;
+    const functionalTeam = group.functionalTeam;
+    
+    const passRate = total > 0 ? (pass / total * 100) : 0;
+
+    let rateClass = 'rate-low';
+    if (passRate >= 80) {
+      rateClass = 'rate-high';
+    } else if (passRate >= 50) {
+      rateClass = 'rate-med';
+    }
+
+    // Format date for display
+    let displayDate = group.date;
+    try {
+      displayDate = new Date(group.date).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      console.error(e);
+    }
+
+    const row = document.createElement('tr');
+    row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    row.style.height = '3.5rem';
+
+    row.innerHTML = `
+      <td style="font-weight: 700; color: rgba(231,236,255,0.9);">${displayDate}</td>
+      <td style="font-weight: 800; color: #76d7ff;">${escapeHtml(group.project)}</td>
+      <td style="text-align: right; font-weight: 700; color: #ffffff;">${total}</td>
+      <td style="text-align: right; color: #6df5a4; font-weight: 600;">${pass}</td>
+      <td style="text-align: right; color: #ff6a70; font-weight: 600;">${fail}</td>
+      <td style="text-align: right; color: #ffc469; font-weight: 600;">${onhold}</td>
+      <td style="text-align: right; color: #ffd54f; font-weight: 600;">${pending}</td>
+      <td style="text-align: right; color: #b085f5; font-weight: 600;">${na}</td>
+      <td style="text-align: right; color: #f472b6; font-weight: 600;">${functionalTeam}</td>
+      <td style="text-align: right;">
+        <span class="rate-badge ${rateClass}">${passRate.toFixed(1)}%</span>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
 }
 
 function updateOverallSummaryUI(summary) {

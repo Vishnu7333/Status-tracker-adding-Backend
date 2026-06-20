@@ -60,6 +60,35 @@
     <!-- Error/Loading Messages -->
     <div id="admin-message" style="display:none; text-align:center; padding:1.2rem; border-radius:12px; margin-bottom:1.5rem; font-weight:700;"></div>
 
+    <!-- Daily Project Status Summary Section -->
+    <section class="admin-section card">
+      <h2>Daily Project Summaries</h2>
+      <p class="form-hint" style="margin-bottom: 0.5rem; color: rgba(231, 236, 255, 0.7);">Aggregated status counts for each project, tracked day-by-day (based on updated entries only).</p>
+      <div class="table-container" style="overflow-x: auto;">
+        <table id="daily-project-summary-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.08); height: 3rem;">
+              <th>Date</th>
+              <th>Project</th>
+              <th style="text-align: right;">Total Test Cases</th>
+              <th style="text-align: right;">Passed</th>
+              <th style="text-align: right;">Failed</th>
+              <th style="text-align: right;">On Hold</th>
+              <th style="text-align: right;">Pending</th>
+              <th style="text-align: right;">N/A</th>
+              <th style="text-align: right;">Functional Team</th>
+              <th style="text-align: right;">Pass Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="10" class="empty-state">Loading daily summaries...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- Team Performance Section -->
     <section class="admin-section card">
       <h2>Team Performance</h2>
@@ -77,6 +106,29 @@
           <tbody>
             <tr>
               <td colspan="5" class="empty-state">Loading team performance...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Employee & Admin Directory Section -->
+    <section class="admin-section card">
+      <h2>Employee & Admin Directory</h2>
+      <p class="form-hint" style="margin-bottom: 0.5rem; color: rgba(231, 236, 255, 0.7);">Manage registered users and update their system permissions.</p>
+      <div class="table-container" style="overflow-x: auto;">
+        <table id="users-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.08); height: 3rem;">
+              <th>Name & Email</th>
+              <th>System Role</th>
+              <th>Joined Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="4" class="empty-state">Loading user directory...</td>
             </tr>
           </tbody>
         </table>
