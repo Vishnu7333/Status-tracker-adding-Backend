@@ -385,6 +385,30 @@ async function parseTestcaseForm(event) {
   const functionalTeam = functionalTeamCountInput ? readOptionalCount(functionalTeamCountInput) : null;
 
   const values = { total, pass, fail, onhold, pending, na, functionalTeam };
+
+  const comments = commentInput ? commentInput.value.trim() : '';
+  const commentsLower = comments.toLowerCase();
+  const isNAOrFT = commentsLower.includes('n/a') || commentsLower.includes('taken care by functional team') || commentsLower.includes('functional team');
+
+  if (isNAOrFT) {
+    values.na = 0;
+    values.functionalTeam = 0;
+    if (naCountInput) naCountInput.value = '0';
+    if (functionalTeamCountInput) functionalTeamCountInput.value = '0';
+
+    if (values.total !== null && !isNaN(values.total)) {
+      const pVal = values.pass ?? 0;
+      const fVal = values.fail ?? 0;
+      const ohVal = values.onhold ?? 0;
+      values.pending = values.total - pVal - fVal - ohVal;
+      if (values.pending < 0) values.pending = 0;
+      if (pendingCountInput) pendingCountInput.value = values.pending;
+
+      values.pass = pVal;
+      values.fail = fVal;
+      values.onhold = ohVal;
+    }
+  }
   if (Object.values(values).some((value) => Number.isNaN(value))) {
     let scrolled = false;
     if (isNaN(total) && totalCountInput) {
@@ -1310,9 +1334,34 @@ function init() {
     }
   }
   
+  // Dynamic fields auto-calculation and zeroing out based on comment
+  function applyCommentOverride() {
+    const commentLower = (commentInput ? commentInput.value.trim() : '').toLowerCase();
+    const isNA = commentLower.includes('n/a');
+    const isFT = commentLower.includes('taken care by functional team') || commentLower.includes('functional team');
+    if (isNA || isFT) {
+      if (naCountInput) naCountInput.value = '0';
+      if (functionalTeamCountInput) functionalTeamCountInput.value = '0';
+      
+      const totalVal = readOptionalCount(totalCountInput);
+      if (totalVal !== null && !isNaN(totalVal)) {
+        const passVal = readOptionalCount(passCountInput) ?? 0;
+        const failVal = readOptionalCount(failCountInput) ?? 0;
+        const onholdVal = readOptionalCount(onholdCountInput) ?? 0;
+        const pendingVal = totalVal - passVal - failVal - onholdVal;
+        if (pendingCountInput) pendingCountInput.value = pendingVal >= 0 ? pendingVal : 0;
+      }
+    }
+  }
+
+  if (commentInput) commentInput.addEventListener('input', applyCommentOverride);
+  [totalCountInput, passCountInput, failCountInput, onholdCountInput].forEach(input => {
+    if (input) input.addEventListener('input', applyCommentOverride);
+  });
+
   if (loginForm) loginForm.addEventListener('submit', handleLoginSubmit);
   if (switchUserBtn) switchUserBtn.addEventListener('click', handleSwitchUser);
-  
+
   checkUserSession();
   updateTable();
   updateDraftSummary();
