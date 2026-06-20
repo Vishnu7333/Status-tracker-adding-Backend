@@ -30,19 +30,15 @@ public class EntryService {
 
     @Transactional
     public EntryResponseDTO upsertEntry(User user, EntryRequestDTO dto) {
-        String comments = dto.getComments() != null ? dto.getComments().trim() : "";
-        String commentsLower = comments.toLowerCase();
-        boolean isNAOrFT = commentsLower.contains("n/a") || commentsLower.contains("taken care by functional team") || commentsLower.contains("functional team");
-
         int passVal = dto.getPass() != null ? dto.getPass() : 0;
         int failVal = dto.getFail() != null ? dto.getFail() : 0;
         int onholdVal = dto.getOnhold() != null ? dto.getOnhold() : 0;
-        int naVal = isNAOrFT ? 0 : (dto.getNa() != null ? dto.getNa() : 0);
-        int functionalTeamVal = isNAOrFT ? 0 : (dto.getFunctionalTeam() != null ? dto.getFunctionalTeam() : 0);
+        int naVal = dto.getNa() != null ? dto.getNa() : 0;
+        int functionalTeamVal = dto.getFunctionalTeam() != null ? dto.getFunctionalTeam() : 0;
 
         int pendingVal;
-        if (isNAOrFT && dto.getTotal() != null) {
-            pendingVal = dto.getTotal() - passVal - failVal - onholdVal;
+        if (dto.getTotal() != null) {
+            pendingVal = dto.getTotal() - passVal - failVal - onholdVal - naVal - functionalTeamVal;
             if (pendingVal < 0) {
                 pendingVal = 0;
             }

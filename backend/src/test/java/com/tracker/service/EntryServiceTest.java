@@ -164,12 +164,12 @@ class EntryServiceTest {
     }
 
     @Test
-    void upsertEntry_WhenCommentContainsNAOrFunctionalTeam_SetsFieldsToZeroAndCalculatesPending() {
+    void upsertEntry_WhenTotalProvided_CalculatesPendingCountAndDefaultsNullsToZero() {
         when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(any(), any(), any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Test with "N/a" comment
+        // Test with na and functionalTeam specified
         EntryRequestDTO d1 = EntryRequestDTO.builder()
                 .project("Project Alpha")
                 .module("Auth")
@@ -178,17 +178,16 @@ class EntryServiceTest {
                 .pass(4)
                 .fail(2)
                 .onhold(1)
-                .na(3)
-                .functionalTeam(3)
-                .comments("N/a")
+                .na(1)
+                .functionalTeam(1)
                 .build();
 
         EntryResponseDTO res1 = entryService.upsertEntry(user, d1);
-        assertEquals(0, res1.getNa());
-        assertEquals(0, res1.getFunctionalTeam());
-        assertEquals(3, res1.getPending()); // 10 - 4 - 2 - 1 = 3
+        assertEquals(1, res1.getNa());
+        assertEquals(1, res1.getFunctionalTeam());
+        assertEquals(1, res1.getPending()); // 10 - 4 - 2 - 1 - 1 - 1 = 1
 
-        // Test with "taken care by functional team" comment
+        // Test with na and functionalTeam as null (defaults to 0)
         EntryRequestDTO d2 = EntryRequestDTO.builder()
                 .project("Project Alpha")
                 .module("Auth")
@@ -197,15 +196,14 @@ class EntryServiceTest {
                 .pass(10)
                 .fail(5)
                 .onhold(2)
-                .na(5)
-                .functionalTeam(5)
-                .comments("taken care by functional team")
+                .na(null)
+                .functionalTeam(null)
                 .build();
 
         EntryResponseDTO res2 = entryService.upsertEntry(user, d2);
         assertEquals(0, res2.getNa());
         assertEquals(0, res2.getFunctionalTeam());
-        assertEquals(3, res2.getPending()); // 20 - 10 - 5 - 2 = 3
+        assertEquals(3, res2.getPending()); // 20 - 10 - 5 - 2 - 0 - 0 = 3
     }
 
     @Test
