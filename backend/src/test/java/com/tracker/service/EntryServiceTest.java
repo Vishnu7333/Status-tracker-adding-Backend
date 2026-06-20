@@ -164,6 +164,51 @@ class EntryServiceTest {
     }
 
     @Test
+    void upsertEntry_WhenCommentContainsNAOrFunctionalTeam_SetsFieldsToZeroAndCalculatesPending() {
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(any(), any(), any(), any(), any()))
+                .thenReturn(Optional.empty());
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Test with "N/a" comment
+        EntryRequestDTO d1 = EntryRequestDTO.builder()
+                .project("Project Alpha")
+                .module("Auth")
+                .submodule("Login")
+                .total(10)
+                .pass(4)
+                .fail(2)
+                .onhold(1)
+                .na(3)
+                .functionalTeam(3)
+                .comments("N/a")
+                .build();
+
+        EntryResponseDTO res1 = entryService.upsertEntry(user, d1);
+        assertEquals(0, res1.getNa());
+        assertEquals(0, res1.getFunctionalTeam());
+        assertEquals(3, res1.getPending()); // 10 - 4 - 2 - 1 = 3
+
+        // Test with "taken care by functional team" comment
+        EntryRequestDTO d2 = EntryRequestDTO.builder()
+                .project("Project Alpha")
+                .module("Auth")
+                .submodule("Login")
+                .total(20)
+                .pass(10)
+                .fail(5)
+                .onhold(2)
+                .na(5)
+                .functionalTeam(5)
+                .comments("taken care by functional team")
+                .build();
+
+        EntryResponseDTO res2 = entryService.upsertEntry(user, d2);
+        assertEquals(0, res2.getNa());
+        assertEquals(0, res2.getFunctionalTeam());
+        assertEquals(3, res2.getPending()); // 20 - 10 - 5 - 2 = 3
+    }
+
+    @Test
     void getEntriesForUser_ReturnsOrderedEntries() {
         Entry older = Entry.builder().entryDate(LocalDate.now().minusDays(1)).user(user).build();
         Entry newer = Entry.builder().entryDate(LocalDate.now()).user(user).build();
