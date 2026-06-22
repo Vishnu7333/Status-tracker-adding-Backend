@@ -672,22 +672,6 @@ function createImageReport() {
 
   const table = document.createElement('table');
   table.className = 'image-report-table';
-  const thead = document.createElement('thead');
-  thead.innerHTML = `
-    <tr>
-      <th>Module</th>
-      <th>Submodule</th>
-      <th>Total</th>
-      <th>Pass</th>
-      <th>Fail</th>
-      <th>On Hold</th>
-      <th>Pending</th>
-      <th>N/A</th>
-      <th>Taken care by functional team</th>
-      <th>Status</th>
-      <th>Comments</th>
-    </tr>
-  `;
 
   const tbody = document.createElement('tbody');
   if (!records.length) {
@@ -700,9 +684,27 @@ function createImageReport() {
     tbody.appendChild(row);
   } else {
     Object.entries(groupByProjectAndModule(records)).forEach(([projectName, modules]) => {
+      // 1. Project/Customer row
       const projectRow = document.createElement('tr');
       projectRow.innerHTML = `<td colspan="11" style="background: #e2efda; color: #375623; font-weight: 800; padding: 0.7rem;">Customer: ${projectName}</td>`;
       tbody.appendChild(projectRow);
+
+      // 2. Column Headers row
+      const headerRow = document.createElement('tr');
+      headerRow.innerHTML = `
+        <th>Module</th>
+        <th>Submodule</th>
+        <th>Total</th>
+        <th>Pass</th>
+        <th>Fail</th>
+        <th>On Hold</th>
+        <th>Pending</th>
+        <th>N/A</th>
+        <th>Taken care by functional team</th>
+        <th>Status</th>
+        <th>Comments</th>
+      `;
+      tbody.appendChild(headerRow);
 
       Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
         const moduleSummary = moduleRecords.reduce(
@@ -723,7 +725,7 @@ function createImageReport() {
         moduleRow.className = 'image-report-module-row';
         const moduleCell = document.createElement('td');
         moduleCell.colSpan = 11;
-        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Taken care by functional team: ${moduleSummary.functionalTeam || 0} | Status: ${getModuleStatus(moduleSummary)}`;
+        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || ''} | Taken care by functional team: ${moduleSummary.functionalTeam || ''} | Status: ${getModuleStatus(moduleSummary)}`;
         moduleRow.appendChild(moduleCell);
         tbody.appendChild(moduleRow);
 
@@ -741,8 +743,8 @@ function createImageReport() {
             record.fail,
             record.onhold,
             record.pending,
-            record.na || 0,
-            record.functionalTeam || 0,
+            record.na || '',
+            record.functionalTeam || '',
             getStatus(record),
             record.comments || '-',
           ].forEach((value) => {
@@ -754,9 +756,26 @@ function createImageReport() {
         });
       });
     });
+
+    // Add Grand Total row styled matching the Excel total row
+    const grandTotalRow = document.createElement('tr');
+    grandTotalRow.className = 'image-report-grand-total';
+    grandTotalRow.innerHTML = `
+      <td colspan="2" style="text-align: center;">Grand Total</td>
+      <td>${summary.total}</td>
+      <td>${summary.pass}</td>
+      <td>${summary.fail}</td>
+      <td>${summary.onhold}</td>
+      <td>${summary.pending}</td>
+      <td>${summary.na || ''}</td>
+      <td>${summary.functionalTeam || ''}</td>
+      <td></td>
+      <td></td>
+    `;
+    tbody.appendChild(grandTotalRow);
   }
 
-  table.append(thead, tbody);
+  table.appendChild(tbody);
   report.appendChild(table);
   return report;
 }
@@ -829,8 +848,8 @@ function getModuleSummaries() {
   });
 }
 
-function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, projectHeaderRows) {
-  const isHeaderRow = rowIndex === 2;
+function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, projectHeaderRows, headerRows) {
+  const isHeaderRow = headerRows ? headerRows.has(rowIndex) : (rowIndex === 2);
   const isTitleRow = rowIndex === 0;
   const isGrandTotalRow = rowIndex === grandTotalRowIndex;
   const isProjectHeaderRow = projectHeaderRows && projectHeaderRows.has(rowIndex);
@@ -848,6 +867,7 @@ function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, p
   if (isGrandTotalRow) {
     style.alignment.horizontal = 'center';
     style.fill = { fgColor: { rgb: 'FFF2CC' } };
+    style.font = { bold: true, sz: 12 };
   }
 
   if (isHeaderRow) {
@@ -861,7 +881,7 @@ function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, p
     style.alignment.horizontal = 'left';
   }
 
-  if (isTitleRow || isHeaderRow || (columnIndex === 0 && rowIndex > 2)) {
+  if (isTitleRow || isHeaderRow || (columnIndex === 0 && !isProjectHeaderRow && !isGrandTotalRow && rowIndex > 1)) {
     style.font = { ...style.font, bold: true };
   }
 
@@ -889,16 +909,22 @@ async function downloadExcel() {
       return groups;
     }, {});
 
-    const summaryRows = [['Module Status Tracker'], [], ['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']];
+    const summaryRows = [['Module Status Tracker'], []];
     const summaryMerges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }];
     const projectHeaderRows = new Set();
+    const headerRows = new Set();
 
     Object.entries(groupedByProject).forEach(([projName, projRecords]) => {
-      // Add project header row
+      // 1. Add project header row above column headers
       const projectRowIndex = summaryRows.length;
-      summaryRows.push([`Project: ${projName}`, '', '', '', '', '', '', '', '', '', '']);
+      summaryRows.push([`Customer: ${projName}`, '', '', '', '', '', '', '', '', '', '']);
       summaryMerges.push({ s: { r: projectRowIndex, c: 0 }, e: { r: projectRowIndex, c: 10 } });
       projectHeaderRows.add(projectRowIndex);
+
+      // 2. Add column headers row below the project row
+      const headerRowIndex = summaryRows.length;
+      summaryRows.push(['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']);
+      headerRows.add(headerRowIndex);
 
       // Group this project's records by module
       const moduleGroups = projRecords.reduce((groups, record) => {
@@ -952,7 +978,13 @@ async function downloadExcel() {
       { wch: 14 },
       { wch: 28 },
     ];
-    summarySheet['!rows'] = [{ hpt: 30 }, { hpt: 8 }, { hpt: 23 }];
+    summarySheet['!rows'] = [];
+    summarySheet['!rows'][0] = { hpt: 30 };
+    summarySheet['!rows'][1] = { hpt: 8 };
+
+    headerRows.forEach((rowIdx) => {
+      summarySheet['!rows'][rowIdx] = { hpt: 23 };
+    });
 
     const thinBorder = {
       top: { style: 'thin', color: { rgb: '000000' } },
@@ -969,7 +1001,7 @@ async function downloadExcel() {
           return;
         }
 
-        summarySheet[cellRef].s = buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, projectHeaderRows);
+        summarySheet[cellRef].s = buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, projectHeaderRows, headerRows);
       });
     });
 
@@ -1023,7 +1055,7 @@ async function downloadExcel() {
           alignment: { horizontal: 'center', vertical: 'center' },
           border: thinBorder,
           fill: { fgColor: { rgb: 'FFF2CC' } },
-          font: { bold: true, sz: 13, color: { rgb: '7F6000' } },
+          font: { bold: true, sz: 12, color: { rgb: '000000' } },
         };
       }
     });
