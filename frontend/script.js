@@ -213,7 +213,7 @@ function createModuleHeaderRow(moduleName, moduleSummary) {
   tr.innerHTML = `
     <td colspan="12">
       <strong>${moduleName}</strong>
-      <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Functional Team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
+      <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Taken care by functional team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
     </td>
   `;
   return tr;
@@ -401,9 +401,7 @@ async function parseTestcaseForm(event) {
     const pVal = values.pass ?? 0;
     const fVal = values.fail ?? 0;
     const ohVal = values.onhold ?? 0;
-    const naVal = values.na ?? 0;
-    const ftVal = values.functionalTeam ?? 0;
-    values.pending = values.total - pVal - fVal - ohVal - naVal - ftVal;
+    values.pending = values.total - pVal - fVal - ohVal;
     if (values.pending < 0) values.pending = 0;
     if (pendingCountInput) pendingCountInput.value = values.pending;
 
@@ -466,14 +464,16 @@ async function parseTestcaseForm(event) {
   }
 
   const countFields = ['pass', 'fail', 'onhold', 'pending', 'na', 'functionalTeam'];
-  const blankCountFields = countFields.filter((fieldName) => values[fieldName] === null);
+  const executionFields = ['pass', 'fail', 'onhold', 'pending'];
+  const blankExecutionFields = executionFields.filter((fieldName) => values[fieldName] === null);
+  const executionTotal = executionFields.reduce((sum, fieldName) => sum + (values[fieldName] ?? 0), 0);
   const countTotal = countFields.reduce((sum, fieldName) => sum + (values[fieldName] ?? 0), 0);
 
   if (values.total === null) {
     values.total = countTotal;
-  } else if (blankCountFields.length === 1) {
-    const missingField = blankCountFields[0];
-    const missingValue = values.total - countTotal;
+  } else if (blankExecutionFields.length === 1) {
+    const missingField = blankExecutionFields[0];
+    const missingValue = values.total - executionTotal;
     if (missingValue < 0) {
       if (totalCountInput) {
         setFieldError(totalCountInput, 'Counts exceed Total.');
@@ -483,13 +483,13 @@ async function parseTestcaseForm(event) {
     }
 
     values[missingField] = missingValue;
-  } else if (countTotal > values.total) {
+  } else if (executionTotal > values.total) {
     if (totalCountInput) {
       setFieldError(totalCountInput, 'Counts exceed Total.');
       scrollToField(totalCountInput);
     }
     return;
-  } else if (countTotal < values.total) {
+  } else if (executionTotal < values.total) {
     if (totalCountInput) {
       setFieldError(totalCountInput, 'Counts must equal Total.');
       scrollToField(totalCountInput);
@@ -612,7 +612,7 @@ function createImageReport() {
     ['On Hold', summary.onhold],
     ['Pending', summary.pending],
     ['N/A', summary.na || 0],
-    ['Functional Team', summary.functionalTeam || 0],
+    ['Taken care by functional team', summary.functionalTeam || 0],
   ].forEach(([label, value]) => {
     const item = document.createElement('div');
     const strong = document.createElement('strong');
@@ -638,7 +638,7 @@ function createImageReport() {
       <th>On Hold</th>
       <th>Pending</th>
       <th>N/A</th>
-      <th>Functional Team</th>
+      <th>Taken care by functional team</th>
       <th>Status</th>
       <th>Comments</th>
     </tr>
@@ -678,7 +678,7 @@ function createImageReport() {
         moduleRow.className = 'image-report-module-row';
         const moduleCell = document.createElement('td');
         moduleCell.colSpan = 11;
-        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Functional Team: ${moduleSummary.functionalTeam || 0} | Status: ${getModuleStatus(moduleSummary)}`;
+        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Taken care by functional team: ${moduleSummary.functionalTeam || 0} | Status: ${getModuleStatus(moduleSummary)}`;
         moduleRow.appendChild(moduleCell);
         tbody.appendChild(moduleRow);
 
@@ -844,7 +844,7 @@ async function downloadExcel() {
       return groups;
     }, {});
 
-    const summaryRows = [['Module Status Tracker'], [], ['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Functional Team', 'Status', 'Comments']];
+    const summaryRows = [['Module Status Tracker'], [], ['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']];
     const summaryMerges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }];
     const projectHeaderRows = new Set();
 
@@ -1076,7 +1076,7 @@ function updateHistoryTable() {
       moduleHeader.innerHTML = `
         <td colspan="13">
           <strong>${moduleName}</strong>
-          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Functional Team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
+          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Taken care by functional team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
         </td>
       `;
       historyTableBody.appendChild(moduleHeader);
@@ -1350,7 +1350,7 @@ function init() {
       const onholdVal = readOptionalCount(onholdCountInput) ?? 0;
       const naVal = readOptionalCount(naCountInput) ?? 0;
       const ftVal = readOptionalCount(functionalTeamCountInput) ?? 0;
-      const pendingVal = totalVal - passVal - failVal - onholdVal - naVal - ftVal;
+      const pendingVal = totalVal - passVal - failVal - onholdVal;
       if (pendingCountInput) pendingCountInput.value = pendingVal >= 0 ? pendingVal : 0;
     } else {
       if (pendingCountInput) pendingCountInput.value = '';

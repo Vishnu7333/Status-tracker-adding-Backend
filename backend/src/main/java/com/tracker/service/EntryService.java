@@ -38,7 +38,7 @@ public class EntryService {
 
         int pendingVal;
         if (dto.getTotal() != null) {
-            pendingVal = dto.getTotal() - passVal - failVal - onholdVal - naVal - functionalTeamVal;
+            pendingVal = dto.getTotal() - passVal - failVal - onholdVal;
             if (pendingVal < 0) {
                 pendingVal = 0;
             }

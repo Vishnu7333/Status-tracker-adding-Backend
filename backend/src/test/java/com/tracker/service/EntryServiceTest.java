@@ -185,7 +185,7 @@ class EntryServiceTest {
         EntryResponseDTO res1 = entryService.upsertEntry(user, d1);
         assertEquals(1, res1.getNa());
         assertEquals(1, res1.getFunctionalTeam());
-        assertEquals(1, res1.getPending()); // 10 - 4 - 2 - 1 - 1 - 1 = 1
+        assertEquals(3, res1.getPending()); // 10 - 4 - 2 - 1 = 3
 
         // Test with na and functionalTeam as null (defaults to 0)
         EntryRequestDTO d2 = EntryRequestDTO.builder()
@@ -203,7 +203,7 @@ class EntryServiceTest {
         EntryResponseDTO res2 = entryService.upsertEntry(user, d2);
         assertEquals(0, res2.getNa());
         assertEquals(0, res2.getFunctionalTeam());
-        assertEquals(3, res2.getPending()); // 20 - 10 - 5 - 2 - 0 - 0 = 3
+        assertEquals(3, res2.getPending()); // 20 - 10 - 5 - 2 = 3
     }
 
     @Test
