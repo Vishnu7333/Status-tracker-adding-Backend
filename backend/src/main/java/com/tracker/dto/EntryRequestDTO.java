@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -50,4 +52,6 @@ public class EntryRequestDTO {
     private Integer functionalTeam;
 
     private String comments;
+
+    private LocalDate entryDate;
 }

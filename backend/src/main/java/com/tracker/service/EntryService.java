@@ -70,7 +70,7 @@ public class EntryService {
             existing.setTotal(totalVal);
             existing.setStatus(calculatedStatus);
             existing.setComments(dto.getComments());
-            existing.setEntryDate(LocalDate.now());
+            existing.setEntryDate(dto.getEntryDate() != null ? dto.getEntryDate() : LocalDate.now());
 
             existing.setUpdatedAt(LocalDateTime.now());
             entryToSave = existing;
@@ -89,7 +89,7 @@ public class EntryService {
                     .total(totalVal)
                     .status(calculatedStatus)
                     .comments(dto.getComments())
-                    .entryDate(LocalDate.now())
+                    .entryDate(dto.getEntryDate() != null ? dto.getEntryDate() : LocalDate.now())
                     .build();
         }
 

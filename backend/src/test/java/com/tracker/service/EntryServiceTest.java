@@ -339,4 +339,28 @@ class EntryServiceTest {
         assertEquals(80.0, otherSummary.getSummary().getPassRate());
         assertEquals(LocalDate.now(), otherSummary.getLastActive());
     }
+
+    @Test
+    void upsertEntry_WhenEntryDateProvided_SavesWithProvidedDate() {
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(any(), any(), any(), any()))
+                .thenReturn(Optional.empty());
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        LocalDate customDate = LocalDate.now().minusDays(5);
+        EntryRequestDTO customDTO = EntryRequestDTO.builder()
+                .project("Project Alpha")
+                .module("Authentication")
+                .submodule("OAuth2")
+                .total(10)
+                .pass(5)
+                .fail(2)
+                .entryDate(customDate)
+                .build();
+
+        EntryResponseDTO response = entryService.upsertEntry(user, customDTO);
+
+        assertNotNull(response);
+        assertEquals(customDate, response.getEntryDate());
+        verify(entryRepository, times(1)).save(any(Entry.class));
+    }
 }
