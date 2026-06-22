@@ -231,8 +231,8 @@ function createRow(record, index) {
     <td class="status-fail">${record.fail}</td>
     <td class="status-onhold">${record.onhold}</td>
     <td class="status-pending">${record.pending}</td>
-    <td class="status-na">${record.na || 0}</td>
-    <td class="status-functional">${record.functionalTeam || 0}</td>
+    <td class="status-na">${record.na || ''}</td>
+    <td class="status-functional">${record.functionalTeam || ''}</td>
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
@@ -867,7 +867,7 @@ async function downloadExcel() {
       Object.entries(moduleGroups).forEach(([moduleName, moduleRecords]) => {
         const moduleStartRow = summaryRows.length;
         moduleRecords.forEach((record) => {
-          summaryRows.push([moduleName, record.submodule, record.total, record.pass, record.fail, record.onhold, record.pending, record.na || 0, record.functionalTeam || 0, getStatus(record), record.comments || '-']);
+          summaryRows.push([moduleName, record.submodule, record.total, record.pass, record.fail, record.onhold, record.pending, record.na || '', record.functionalTeam || '', getStatus(record), record.comments || '-']);
         });
 
         if (moduleRecords.length > 1) {
@@ -1019,8 +1019,8 @@ function createHistoryRow(record) {
     <td class="status-fail">${record.fail}</td>
     <td class="status-onhold">${record.onhold}</td>
     <td class="status-pending">${record.pending}</td>
-    <td class="status-na">${record.na || 0}</td>
-    <td class="status-functional">${record.functionalTeam || 0}</td>
+    <td class="status-na">${record.na || ''}</td>
+    <td class="status-functional">${record.functionalTeam || ''}</td>
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
