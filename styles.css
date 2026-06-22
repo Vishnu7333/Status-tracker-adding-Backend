@@ -128,7 +128,7 @@ button:hover {
   background: #2d5cff;
 }
 
-.remove-button {
+.remove-button, .retrieve-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -136,10 +136,18 @@ button:hover {
   height: 2.5rem;
   padding: 0;
   border-radius: 12px;
-  background: rgba(255, 106, 112, 0.13);
-  color: #ff6a70;
   font-size: 1.25rem;
   line-height: 1;
+}
+
+.remove-button {
+  background: rgba(255, 106, 112, 0.13);
+  color: #ff6a70;
+}
+
+.retrieve-button {
+  background: rgba(59, 130, 246, 0.13);
+  color: #3b82f6;
 }
 
 .remove-button svg {
@@ -155,6 +163,10 @@ button:hover {
 
 .remove-button:hover {
   background: rgba(255, 106, 112, 0.25);
+}
+
+.retrieve-button:hover {
+  background: rgba(59, 130, 246, 0.25);
 }
 
 .form-message {
