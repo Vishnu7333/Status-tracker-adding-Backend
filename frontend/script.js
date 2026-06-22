@@ -400,7 +400,9 @@ async function parseTestcaseForm(event) {
     const pVal = values.pass ?? 0;
     const fVal = values.fail ?? 0;
     const ohVal = values.onhold ?? 0;
-    values.pending = values.total - pVal - fVal - ohVal;
+    const naVal = values.na ?? 0;
+    const ftVal = values.functionalTeam ?? 0;
+    values.pending = values.total - pVal - fVal - ohVal - naVal - ftVal;
     if (values.pending < 0) values.pending = 0;
     if (pendingCountInput) pendingCountInput.value = values.pending;
 
@@ -463,7 +465,7 @@ async function parseTestcaseForm(event) {
   }
 
   const countFields = ['pass', 'fail', 'onhold', 'pending', 'na', 'functionalTeam'];
-  const executionFields = ['pass', 'fail', 'onhold', 'pending'];
+  const executionFields = ['pass', 'fail', 'onhold', 'pending', 'na', 'functionalTeam'];
   const blankExecutionFields = executionFields.filter((fieldName) => values[fieldName] === null);
   const executionTotal = executionFields.reduce((sum, fieldName) => sum + (values[fieldName] ?? 0), 0);
   const countTotal = countFields.reduce((sum, fieldName) => sum + (values[fieldName] ?? 0), 0);
@@ -1467,7 +1469,7 @@ function init() {
       const onholdVal = readOptionalCount(onholdCountInput) ?? 0;
       const naVal = readOptionalCount(naCountInput) ?? 0;
       const ftVal = readOptionalCount(functionalTeamCountInput) ?? 0;
-      const pendingVal = totalVal - passVal - failVal - onholdVal;
+      const pendingVal = totalVal - passVal - failVal - onholdVal - naVal - ftVal;
       if (pendingCountInput) pendingCountInput.value = pendingVal >= 0 ? pendingVal : 0;
     } else {
       if (pendingCountInput) pendingCountInput.value = '';
