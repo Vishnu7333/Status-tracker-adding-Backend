@@ -391,11 +391,9 @@ async function parseTestcaseForm(event) {
 
   if (values.na === null) {
     values.na = 0;
-    if (naCountInput) naCountInput.value = '0';
   }
   if (values.functionalTeam === null) {
     values.functionalTeam = 0;
-    if (functionalTeamCountInput) functionalTeamCountInput.value = '0';
   }
 
   if (values.total !== null && !isNaN(values.total)) {
@@ -1480,16 +1478,7 @@ function init() {
     if (input) input.addEventListener('input', calculatePending);
   });
 
-  [naCountInput, functionalTeamCountInput].forEach(input => {
-    if (input) {
-      input.addEventListener('blur', () => {
-        if (input.value.trim() === '') {
-          input.value = '0';
-          calculatePending();
-        }
-      });
-    }
-  });
+
 
   if (loginForm) loginForm.addEventListener('submit', handleLoginSubmit);
   if (switchUserBtn) switchUserBtn.addEventListener('click', handleSwitchUser);
