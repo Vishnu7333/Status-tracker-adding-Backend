@@ -25,6 +25,7 @@ const exportImageButton = document.getElementById('export-image');
 
 const records = [];
 const historyRecords = [];
+let employeeChart = null;
 const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'
   ? 'http://localhost:8080'
   : 'https://status-tracker-api.onrender.com';
@@ -1088,6 +1089,123 @@ function updateHistoryTable() {
   });
 }
 
+function updateProgressChart() {
+  const chartCanvas = document.getElementById('employee-progress-chart');
+  if (!chartCanvas) return;
+
+  const dailyData = {};
+  historyRecords.forEach(record => {
+    const date = record.entryDate;
+    if (!dailyData[date]) {
+      dailyData[date] = { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 };
+    }
+    dailyData[date].total += record.total || 0;
+    dailyData[date].pass += record.pass || 0;
+    dailyData[date].fail += record.fail || 0;
+    dailyData[date].onhold += record.onhold || 0;
+    dailyData[date].pending += record.pending || 0;
+  });
+
+  const sortedDates = Object.keys(dailyData).sort();
+
+  const labels = sortedDates.map(dateStr => {
+    try {
+      return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch(e) {
+      return dateStr;
+    }
+  });
+
+  const totalPoints = sortedDates.map(d => dailyData[d].total);
+  const passPoints = sortedDates.map(d => dailyData[d].pass);
+  const failPoints = sortedDates.map(d => dailyData[d].fail);
+  const onholdPoints = sortedDates.map(d => dailyData[d].onhold);
+
+  if (employeeChart) {
+    employeeChart.destroy();
+  }
+
+  if (sortedDates.length === 0) {
+    return;
+  }
+
+  const ctx = chartCanvas.getContext('2d');
+  employeeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Total Cases',
+          data: totalPoints,
+          borderColor: 'rgba(118, 215, 255, 0.8)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          tension: 0.2,
+          pointRadius: 3
+        },
+        {
+          label: 'Passed',
+          data: passPoints,
+          borderColor: 'rgba(109, 245, 164, 0.9)',
+          backgroundColor: 'rgba(109, 245, 164, 0.05)',
+          fill: true,
+          borderWidth: 3,
+          tension: 0.2,
+          pointRadius: 4
+        },
+        {
+          label: 'Failed',
+          data: failPoints,
+          borderColor: 'rgba(255, 106, 112, 0.9)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          tension: 0.2,
+          pointRadius: 3
+        },
+        {
+          label: 'On Hold',
+          data: onholdPoints,
+          borderColor: 'rgba(255, 196, 105, 0.9)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          tension: 0.2,
+          pointRadius: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: '#e7ecff',
+            font: { family: 'Inter, sans-serif', size: 11 }
+          }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#b2c0f0', font: { family: 'Inter, sans-serif' } }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#b2c0f0', font: { family: 'Inter, sans-serif' } },
+          min: 0
+        }
+      }
+    }
+  });
+}
+
 async function removeHistoryRecord(event) {
   const button = event.target.closest('.remove-history-button');
   if (!button) {
@@ -1134,6 +1252,7 @@ async function fetchMyHistory() {
     historyRecords.length = 0;
   }
   updateHistoryTable();
+  updateProgressChart();
 }
 
 async function completeProcess() {

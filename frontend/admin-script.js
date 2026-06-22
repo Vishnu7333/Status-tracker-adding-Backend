@@ -7,6 +7,9 @@ const API_HEADERS = {
   get 'X-User-Name'() { return localStorage.getItem('userName') || ''; }
 };
 
+let allEntries = [];
+let adminProgressChart = null;
+
 function checkAdminSession() {
   const email = localStorage.getItem('userEmail') || '';
   const name = localStorage.getItem('userName') || '';
@@ -67,28 +70,24 @@ async function loadDashboardData() {
       updateOverallSummaryUI(summaryResult.data);
     }
 
-    // 2. Fetch team performance
-    const teamResponse = await fetch(`${BASE_URL}/api/admin/summary/per-user`, {
-      method: 'GET',
-      headers: API_HEADERS
-    });
-    const teamResult = await teamResponse.json();
-    if (teamResult && teamResult.success && teamResult.data) {
-      updateTeamTableUI(teamResult.data);
-    }
-
-    // 3. Fetch global entries log
+    // 2. Fetch global entries log
     const entriesResponse = await fetch(`${BASE_URL}/api/admin/entries`, {
       method: 'GET',
       headers: API_HEADERS
     });
     const entriesResult = await entriesResponse.json();
     if (entriesResult && entriesResult.success && entriesResult.data) {
-      updateGlobalEntriesTableUI(entriesResult.data);
-      updateDailyProjectSummaryTableUI(entriesResult.data);
+      allEntries = entriesResult.data;
+      updateDateFilterOptions(allEntries);
+      const select = document.getElementById('admin-date-filter');
+      if (select) {
+        renderDailySummaryForDate(select.value);
+      }
+      updateTotalCompletionTableUI(allEntries);
+      updateAdminProgressChart(allEntries);
     }
 
-    // 4. Fetch all users
+    // 3. Fetch all users
     const usersResponse = await fetch(`${BASE_URL}/api/admin/users`, {
       method: 'GET',
       headers: API_HEADERS
@@ -203,27 +202,130 @@ async function handleRoleChange(select) {
 // Make sure handleRoleChange is globally available for inline onchange event handler
 window.handleRoleChange = handleRoleChange;
 
-function updateDailyProjectSummaryTableUI(entries) {
+function updateDateFilterOptions(entries) {
+  const select = document.getElementById('admin-date-filter');
+  if (!select) return;
+
+  // Get unique dates sorted descending
+  const dates = [...new Set(entries.map(e => e.entryDate))].sort((a, b) => b.localeCompare(a));
+
+  const currentVal = select.value;
+  select.innerHTML = '';
+
+  if (dates.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'No data';
+    select.appendChild(opt);
+    return;
+  }
+
+  dates.forEach(date => {
+    const opt = document.createElement('option');
+    opt.value = date;
+    try {
+      opt.textContent = new Date(date).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      opt.textContent = date;
+    }
+    select.appendChild(opt);
+  });
+
+  if (dates.includes(currentVal)) {
+    select.value = currentVal;
+  } else {
+    select.value = dates[0];
+  }
+}
+
+function renderDailySummaryForDate(selectedDate) {
   const tbody = document.querySelector('#daily-project-summary-table tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  if (entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No status entries found in the system.</td></tr>`;
+  if (!selectedDate) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No date selected.</td></tr>`;
     return;
   }
 
-  // Group entries by date and project
+  const filtered = allEntries.filter(e => e.entryDate === selectedDate);
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No entries found for the selected date.</td></tr>`;
+    return;
+  }
+
+  // Group by project name
   const groupings = {};
+  filtered.forEach(entry => {
+    const proj = entry.project || 'Untitled Project';
+    if (!groupings[proj]) {
+      groupings[proj] = {
+        project: proj,
+        total: 0,
+        pass: 0,
+        fail: 0,
+        onhold: 0,
+        pending: 0,
+        na: 0,
+        functionalTeam: 0
+      };
+    }
+    const g = groupings[proj];
+    g.total += entry.total || 0;
+    g.pass += entry.pass || 0;
+    g.fail += entry.fail || 0;
+    g.onhold += entry.onhold || 0;
+    g.pending += entry.pending || 0;
+    g.na += entry.na || 0;
+    g.functionalTeam += entry.functionalTeam || 0;
+  });
 
+  Object.values(groupings).forEach(g => {
+    const passRate = g.total > 0 ? (g.pass / g.total * 100) : 0;
+    let rateClass = 'rate-low';
+    if (passRate >= 80) rateClass = 'rate-high';
+    else if (passRate >= 50) rateClass = 'rate-med';
+
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    tr.style.height = '3.5rem';
+    tr.innerHTML = `
+      <td style="font-weight: 800; color: #76d7ff;">${escapeHtml(g.project)}</td>
+      <td style="text-align: right; font-weight: 700; color: #ffffff;">${g.total}</td>
+      <td style="text-align: right; color: #6df5a4; font-weight: 600;">${g.pass}</td>
+      <td style="text-align: right; color: #ff6a70; font-weight: 600;">${g.fail}</td>
+      <td style="text-align: right; color: #ffc469; font-weight: 600;">${g.onhold}</td>
+      <td style="text-align: right; color: #ffd54f; font-weight: 600;">${g.pending}</td>
+      <td style="text-align: right; color: #b085f5; font-weight: 600;">${g.na}</td>
+      <td style="text-align: right; color: #f472b6; font-weight: 600;">${g.functionalTeam}</td>
+      <td style="text-align: right;">
+        <span class="rate-badge ${rateClass}">${passRate.toFixed(1)}%</span>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateTotalCompletionTableUI(entries) {
+  const tbody = document.querySelector('#total-completion-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No entry data available.</td></tr>`;
+    return;
+  }
+
+  // Group by project name
+  const groupings = {};
   entries.forEach(entry => {
-    const dateStr = entry.entryDate; // e.g. "2026-06-20"
     const project = entry.project || 'Untitled Project';
-    const key = `${dateStr}_${project}`;
-
-    if (!groupings[key]) {
-      groupings[key] = {
-        date: dateStr,
+    if (!groupings[project]) {
+      groupings[project] = {
         project: project,
         total: 0,
         pass: 0,
@@ -234,77 +336,161 @@ function updateDailyProjectSummaryTableUI(entries) {
         functionalTeam: 0
       };
     }
-
-    const group = groupings[key];
-    group.total += entry.total || 0;
-    group.pass += entry.pass || 0;
-    group.fail += entry.fail || 0;
-    group.onhold += entry.onhold || 0;
-    group.pending += entry.pending || 0;
-    group.na += entry.na || 0;
-    group.functionalTeam += entry.functionalTeam || 0;
+    const g = groupings[project];
+    g.total += entry.total || 0;
+    g.pass += entry.pass || 0;
+    g.fail += entry.fail || 0;
+    g.onhold += entry.onhold || 0;
+    g.pending += entry.pending || 0;
+    g.na += entry.na || 0;
+    g.functionalTeam += entry.functionalTeam || 0;
   });
 
-  // Convert groupings to array
-  const groupedList = Object.values(groupings);
-
-  // Sort: date descending, then project name ascending
-  groupedList.sort((a, b) => {
-    const dateCompare = b.date.localeCompare(a.date);
-    if (dateCompare !== 0) return dateCompare;
-    return a.project.localeCompare(b.project);
-  });
-
-  // Render rows
-  groupedList.forEach(group => {
-    const total = group.total;
-    const pass = group.pass;
-    const fail = group.fail;
-    const onhold = group.onhold;
-    const pending = group.pending;
-    const na = group.na;
-    const functionalTeam = group.functionalTeam;
-    
-    const passRate = total > 0 ? (pass / total * 100) : 0;
-
+  Object.values(groupings).forEach(g => {
+    const passRate = g.total > 0 ? (g.pass / g.total * 100) : 0;
     let rateClass = 'rate-low';
-    if (passRate >= 80) {
-      rateClass = 'rate-high';
-    } else if (passRate >= 50) {
-      rateClass = 'rate-med';
-    }
+    if (passRate >= 80) rateClass = 'rate-high';
+    else if (passRate >= 50) rateClass = 'rate-med';
 
-    // Format date for display
-    let displayDate = group.date;
-    try {
-      displayDate = new Date(group.date).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (e) {
-      console.error(e);
-    }
-
-    const row = document.createElement('tr');
-    row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-    row.style.height = '3.5rem';
-
-    row.innerHTML = `
-      <td style="font-weight: 700; color: rgba(231,236,255,0.9);">${displayDate}</td>
-      <td style="font-weight: 800; color: #76d7ff;">${escapeHtml(group.project)}</td>
-      <td style="text-align: right; font-weight: 700; color: #ffffff;">${total}</td>
-      <td style="text-align: right; color: #6df5a4; font-weight: 600;">${pass}</td>
-      <td style="text-align: right; color: #ff6a70; font-weight: 600;">${fail}</td>
-      <td style="text-align: right; color: #ffc469; font-weight: 600;">${onhold}</td>
-      <td style="text-align: right; color: #ffd54f; font-weight: 600;">${pending}</td>
-      <td style="text-align: right; color: #b085f5; font-weight: 600;">${na}</td>
-      <td style="text-align: right; color: #f472b6; font-weight: 600;">${functionalTeam}</td>
-      <td style="text-align: right;">
-        <span class="rate-badge ${rateClass}">${passRate.toFixed(1)}%</span>
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    tr.style.height = '3.5rem';
+    tr.innerHTML = `
+      <td style="font-weight: 800; color: #76d7ff;">${escapeHtml(g.project)}</td>
+      <td style="text-align: right; font-weight: 700; color: #ffffff;">${g.total}</td>
+      <td style="text-align: right; color: #6df5a4; font-weight: 600;">${g.pass}</td>
+      <td style="text-align: right; color: #ff6a70; font-weight: 600;">${g.fail}</td>
+      <td style="text-align: right; color: #ffc469; font-weight: 600;">${g.onhold}</td>
+      <td style="text-align: right; color: #ffd54f; font-weight: 600;">${g.pending}</td>
+      <td style="text-align: right; color: #b085f5; font-weight: 600;">${g.na}</td>
+      <td style="text-align: right; color: #f472b6; font-weight: 600;">${g.functionalTeam}</td>
+      <td style="text-align: right; vertical-align: middle;">
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;">
+          <div style="width: 80px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; position: relative;">
+            <div style="width: ${passRate}%; height: 100%; background: ${passRate >= 80 ? '#6df5a4' : passRate >= 50 ? '#ffc469' : '#ff6a70'}; border-radius: 4px;"></div>
+          </div>
+          <span class="rate-badge ${rateClass}" style="margin: 0; min-width: 55px; text-align: right;">${passRate.toFixed(1)}%</span>
+        </div>
       </td>
     `;
-    tbody.appendChild(row);
+    tbody.appendChild(tr);
+  });
+}
+
+function updateAdminProgressChart(entries) {
+  const chartCanvas = document.getElementById('admin-progress-chart');
+  if (!chartCanvas) return;
+
+  const dailyData = {};
+  entries.forEach(entry => {
+    const date = entry.entryDate;
+    if (!dailyData[date]) {
+      dailyData[date] = { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 };
+    }
+    dailyData[date].total += entry.total || 0;
+    dailyData[date].pass += entry.pass || 0;
+    dailyData[date].fail += entry.fail || 0;
+    dailyData[date].onhold += entry.onhold || 0;
+    dailyData[date].pending += entry.pending || 0;
+  });
+
+  const sortedDates = Object.keys(dailyData).sort();
+
+  const labels = sortedDates.map(dateStr => {
+    try {
+      return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch(e) {
+      return dateStr;
+    }
+  });
+
+  const totalPoints = sortedDates.map(d => dailyData[d].total);
+  const passPoints = sortedDates.map(d => dailyData[d].pass);
+  const failPoints = sortedDates.map(d => dailyData[d].fail);
+  const onholdPoints = sortedDates.map(d => dailyData[d].onhold);
+
+  if (adminProgressChart) {
+    adminProgressChart.destroy();
+  }
+
+  if (sortedDates.length === 0) {
+    return;
+  }
+
+  const ctx = chartCanvas.getContext('2d');
+  adminProgressChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Total Cases',
+          data: totalPoints,
+          borderColor: 'rgba(118, 215, 255, 0.8)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          tension: 0.2,
+          pointRadius: 3
+        },
+        {
+          label: 'Passed',
+          data: passPoints,
+          borderColor: 'rgba(109, 245, 164, 0.9)',
+          backgroundColor: 'rgba(109, 245, 164, 0.05)',
+          fill: true,
+          borderWidth: 3,
+          tension: 0.2,
+          pointRadius: 4
+        },
+        {
+          label: 'Failed',
+          data: failPoints,
+          borderColor: 'rgba(255, 106, 112, 0.9)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          tension: 0.2,
+          pointRadius: 3
+        },
+        {
+          label: 'On Hold',
+          data: onholdPoints,
+          borderColor: 'rgba(255, 196, 105, 0.9)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          tension: 0.2,
+          pointRadius: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: '#e7ecff',
+            font: { family: 'Inter, sans-serif', size: 11 }
+          }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#b2c0f0', font: { family: 'Inter, sans-serif' } }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#b2c0f0', font: { family: 'Inter, sans-serif' } },
+          min: 0
+        }
+      }
+    }
   });
 }
 
@@ -337,134 +523,6 @@ function updateOverallSummaryUI(summary) {
   if (document.getElementById('functional-percentage')) document.getElementById('functional-percentage').textContent = `${pct(functionalTeam)}% of total`;
 }
 
-function updateTeamTableUI(teamSummaries) {
-  const tbody = document.querySelector('#team-table tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  if (teamSummaries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No users registered in the system yet.</td></tr>`;
-    return;
-  }
-
-  teamSummaries.forEach(item => {
-    const user = item.user || {};
-    const summary = item.summary || {};
-    const displayName = user.displayName || 'Anonymous Developer';
-    const email = user.email || 'N/A';
-    const role = user.role || 'EMPLOYEE';
-    const total = summary.total || 0;
-    const passRate = summary.passRate !== undefined ? summary.passRate : 0;
-    
-    // Format Date
-    let dateStr = 'N/A';
-    if (user.createdAt) {
-      try {
-        dateStr = new Date(user.createdAt).toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    // Determine rate class
-    let rateClass = 'rate-low';
-    if (passRate >= 80) {
-      rateClass = 'rate-high';
-    } else if (passRate >= 50) {
-      rateClass = 'rate-med';
-    }
-
-    const row = document.createElement('tr');
-    row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-    row.style.height = '3.5rem';
-    row.innerHTML = `
-      <td>
-        <div class="user-badge">
-          <span class="user-badge-name">${escapeHtml(displayName)}</span>
-          <span class="user-badge-email">${escapeHtml(email)}</span>
-        </div>
-      </td>
-      <td>
-        <span class="status-badge ${role.toLowerCase() === 'admin' ? 'status-pass' : 'status-inprogress'}">
-          ${role}
-        </span>
-      </td>
-      <td style="color: rgba(231,236,255,0.7); font-size: 0.9rem;">${dateStr}</td>
-      <td style="text-align: right; font-weight: 700;">${total}</td>
-      <td style="text-align: right;">
-        <span class="rate-badge ${rateClass}">${passRate.toFixed(1)}%</span>
-      </td>
-    `;
-    tbody.appendChild(row);
-  });
-}
-
-function updateGlobalEntriesTableUI(entries) {
-  const tbody = document.querySelector('#global-entries-table tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  if (entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="12" class="empty-state">No status entries found in the system.</td></tr>`;
-    return;
-  }
-
-  // Sort entries by project, module, submodule
-  entries.sort((a, b) => {
-    const projCompare = (a.project || '').localeCompare(b.project || '');
-    if (projCompare !== 0) return projCompare;
-    const modCompare = (a.module || '').localeCompare(b.module || '');
-    if (modCompare !== 0) return modCompare;
-    return (a.submodule || '').localeCompare(b.submodule || '');
-  });
-
-  entries.forEach(entry => {
-    const displayName = entry.displayName || 'Unknown';
-    const email = entry.email || 'N/A';
-    const project = entry.project || 'N/A';
-    const module = entry.module || 'N/A';
-    const submodule = entry.submodule || 'N/A';
-    const total = entry.total || 0;
-    const pass = entry.pass || 0;
-    const fail = entry.fail || 0;
-    const onhold = entry.onhold || 0;
-    const pending = entry.pending || 0;
-    const na = entry.na || 0;
-    const functionalTeam = entry.functionalTeam || 0;
-    const comments = entry.comments || '-';
-
-    const row = document.createElement('tr');
-    row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-    row.style.height = '3.5rem';
-    row.innerHTML = `
-      <td>
-        <div class="user-badge">
-          <span class="user-badge-name">${escapeHtml(displayName)}</span>
-          <span class="user-badge-email">${escapeHtml(email)}</span>
-        </div>
-      </td>
-      <td style="font-weight: 700; color: #76d7ff;">${escapeHtml(project)}</td>
-      <td>${escapeHtml(module)}</td>
-      <td>${escapeHtml(submodule)}</td>
-      <td style="text-align: right; font-weight: 700;">${total}</td>
-      <td style="text-align: right; color: #6df5a4;">${pass}</td>
-      <td style="text-align: right; color: #ff6a70;">${fail}</td>
-      <td style="text-align: right; color: #ffc469;">${onhold}</td>
-      <td style="text-align: right; color: #ffd54f;">${pending}</td>
-      <td style="text-align: right; color: #b085f5;">${na}</td>
-      <td style="text-align: right; color: #f472b6;">${functionalTeam}</td>
-      <td style="font-size: 0.88rem; color: rgba(231,236,255,0.7); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(comments)}">
-        ${escapeHtml(comments)}
-      </td>
-    `;
-    tbody.appendChild(row);
-  });
-}
-
 function escapeHtml(str) {
   if (!str) return '';
   return str
@@ -476,4 +534,12 @@ function escapeHtml(str) {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', loadDashboardData);
+document.addEventListener('DOMContentLoaded', () => {
+  loadDashboardData();
+  const select = document.getElementById('admin-date-filter');
+  if (select) {
+    select.addEventListener('change', (e) => {
+      renderDailySummaryForDate(e.target.value);
+    });
+  }
+});
