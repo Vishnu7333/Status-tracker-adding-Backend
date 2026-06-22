@@ -10,6 +10,30 @@ const API_HEADERS = {
 let allEntries = [];
 let adminProgressChart = null;
 
+function formatDateToDdMmmYyyy(dateInput) {
+  if (!dateInput) return '';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return dateInput;
+  
+  const match = typeof dateInput === 'string' && dateInput.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  let day, monthIndex, year;
+  if (match) {
+    year = match[1];
+    monthIndex = parseInt(match[2], 10) - 1;
+    day = parseInt(match[3], 10);
+  } else {
+    day = date.getDate();
+    monthIndex = date.getMonth();
+    year = date.getFullYear();
+  }
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthName = months[monthIndex];
+  const dayStr = String(day).padStart(2, '0');
+  
+  return `${dayStr}-${monthName}-${year}`;
+}
+
 function checkAdminSession() {
   const email = localStorage.getItem('userEmail') || '';
   const name = localStorage.getItem('userName') || '';
@@ -124,18 +148,7 @@ function updateUsersTableUI(users) {
     const role = user.role || 'EMPLOYEE';
     
     // Format Date
-    let dateStr = 'N/A';
-    if (user.createdAt) {
-      try {
-        dateStr = new Date(user.createdAt).toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    const dateStr = user.createdAt ? formatDateToDdMmmYyyy(user.createdAt) : 'N/A';
 
     const row = document.createElement('tr');
     row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
@@ -223,15 +236,7 @@ function updateDateFilterOptions(entries) {
   dates.forEach(date => {
     const opt = document.createElement('option');
     opt.value = date;
-    try {
-      opt.textContent = new Date(date).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (e) {
-      opt.textContent = date;
-    }
+    opt.textContent = formatDateToDdMmmYyyy(date);
     select.appendChild(opt);
   });
 

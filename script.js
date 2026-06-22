@@ -555,6 +555,12 @@ async function parseTestcaseForm(event) {
 
   clearFormError();
 
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const localDateStr = `${year}-${month}-${day}`;
+
   const record = {
     project: projectName,
     module: moduleInput ? moduleInput.value.trim() : '',
@@ -567,6 +573,7 @@ async function parseTestcaseForm(event) {
     na: values.na,
     functionalTeam: values.functionalTeam,
     comments: commentInput ? commentInput.value.trim() : '',
+    entryDate: localDateStr
   };
 
   if (!record.module || !record.submodule || Number.isNaN(record.total)) {
@@ -1391,12 +1398,19 @@ async function completeProcess() {
   clearFormError();
   clearAllFieldErrors();
 
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const localDateStr = `${year}-${month}-${day}`;
+
   try {
     const savePromises = records.map(async (record) => {
+      const payload = { ...record, entryDate: localDateStr };
       const response = await fetch(`${BASE_URL}/api/entries`, {
         method: 'POST',
         headers: API_HEADERS,
-        body: JSON.stringify(record)
+        body: JSON.stringify(payload)
       });
       return response.json();
     });
