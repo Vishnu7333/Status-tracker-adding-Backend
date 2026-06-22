@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Module Status Tracker</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
@@ -110,6 +111,14 @@
           <button id="export-excel" type="button">Download Excel</button>
           <button id="export-image" type="button">Download Image</button>
         </div>
+      </div>
+    </section>
+
+    <section class="card chart-card" style="margin-top: 1rem; min-height: 360px;">
+      <h2>Progress Trend Graph</h2>
+      <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Your daily test case execution progress trend.</p>
+      <div style="position: relative; height: 280px; width: 100%;">
+        <canvas id="employee-progress-chart"></canvas>
       </div>
     </section>
 

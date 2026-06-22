@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard - Module Status Tracker</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
@@ -40,9 +41,9 @@
         <span class="admin-stat-value" id="overall-onhold">0</span>
         <span class="admin-stat-meta" id="onhold-percentage">0% of total</span>
       </div>
-      <div class="admin-stat-card pending-card">
+      <div class="admin-stat-card onhold-card" style="background: rgba(255, 213, 79, 0.05); border-color: rgba(255, 213, 79, 0.2);">
         <span class="admin-stat-label">Total Pending</span>
-        <span class="admin-stat-value" id="overall-pending">0</span>
+        <span class="admin-stat-value" id="overall-pending" style="color: #ffd54f;">0</span>
         <span class="admin-stat-meta" id="pending-percentage">0% of total</span>
       </div>
       <div class="admin-stat-card na-card">
@@ -57,18 +58,32 @@
       </div>
     </div>
 
+    <!-- Progress Trend Card -->
+    <section class="card chart-card" style="margin-bottom: 2rem; min-height: 360px;">
+      <h2>Overall Progress Trend</h2>
+      <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Cumulative test case execution progress trend across all projects.</p>
+      <div style="position: relative; height: 280px; width: 100%;">
+        <canvas id="admin-progress-chart"></canvas>
+      </div>
+    </section>
+
     <!-- Error/Loading Messages -->
     <div id="admin-message" style="display:none; text-align:center; padding:1.2rem; border-radius:12px; margin-bottom:1.5rem; font-weight:700;"></div>
 
-    <!-- Daily Project Status Summary Section -->
+    <!-- Date Wise Day Progress Section -->
     <section class="admin-section card">
-      <h2>Daily Project Summaries</h2>
-      <p class="form-hint" style="margin-bottom: 0.5rem; color: rgba(231, 236, 255, 0.7);">Aggregated status counts for each project, tracked day-by-day (based on updated entries only).</p>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
+        <h2 style="margin: 0;">Date Wise Day Progress</h2>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-weight: 600; font-size: 0.95rem; color: rgba(231, 236, 255, 0.8);">Select Date:</span>
+          <select id="admin-date-filter" style="width: auto; min-width: 160px; padding: 0.5rem 1rem; border-radius: 10px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;"></select>
+        </div>
+      </div>
+      <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Progress details tracked on the selected day.</p>
       <div class="table-container" style="overflow-x: auto;">
         <table id="daily-project-summary-table" style="width: 100%; border-collapse: collapse; text-align: left;">
           <thead>
             <tr style="border-bottom: 2px solid rgba(255,255,255,0.08); height: 3rem;">
-              <th>Date</th>
               <th>Project</th>
               <th style="text-align: right;">Total Test Cases</th>
               <th style="text-align: right;">Passed</th>
@@ -82,30 +97,35 @@
           </thead>
           <tbody>
             <tr>
-              <td colspan="10" class="empty-state">Loading daily summaries...</td>
+              <td colspan="9" class="empty-state">Loading daily summaries...</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- Team Performance Section -->
-    <section class="admin-section card">
-      <h2>Team Performance</h2>
+    <!-- Total Completion Section -->
+    <section class="admin-section card" style="margin-top: 2rem;">
+      <h2>Total Completion Summary</h2>
+      <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Cumulative status counts and completion progress aggregated for each project.</p>
       <div class="table-container" style="overflow-x: auto;">
-        <table id="team-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+        <table id="total-completion-table" style="width: 100%; border-collapse: collapse; text-align: left;">
           <thead>
             <tr style="border-bottom: 2px solid rgba(255,255,255,0.08); height: 3rem;">
-              <th>Developer</th>
-              <th>Role</th>
-              <th>Created At</th>
-              <th style="text-align: right;">Total Tracked</th>
-              <th style="text-align: right;">Pass Rate</th>
+              <th>Project</th>
+              <th style="text-align: right;">Total Test Cases</th>
+              <th style="text-align: right;">Passed</th>
+              <th style="text-align: right;">Failed</th>
+              <th style="text-align: right;">On Hold</th>
+              <th style="text-align: right;">Pending</th>
+              <th style="text-align: right;">N/A</th>
+              <th style="text-align: right;">Taken care by functional team</th>
+              <th style="text-align: right; width: 200px;">Completion Progress</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td colspan="5" class="empty-state">Loading team performance...</td>
+              <td colspan="9" class="empty-state">Loading total completion summaries...</td>
             </tr>
           </tbody>
         </table>
@@ -113,7 +133,7 @@
     </section>
 
     <!-- Employee & Admin Directory Section -->
-    <section class="admin-section card">
+    <section class="admin-section card" style="margin-top: 2rem;">
       <h2>Employee & Admin Directory</h2>
       <p class="form-hint" style="margin-bottom: 0.5rem; color: rgba(231, 236, 255, 0.7);">Manage registered users and update their system permissions.</p>
       <div class="table-container" style="overflow-x: auto;">
@@ -129,36 +149,6 @@
           <tbody>
             <tr>
               <td colspan="4" class="empty-state">Loading user directory...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Global Activity Log Section -->
-    <section class="admin-section card">
-      <h2>Global Activity Log (All Entries)</h2>
-      <div class="table-container" style="overflow-x: auto;">
-        <table id="global-entries-table" style="width: 100%; border-collapse: collapse; text-align: left;">
-          <thead>
-            <tr style="border-bottom: 2px solid rgba(255,255,255,0.08); height: 3rem;">
-              <th>Owner</th>
-              <th>Project</th>
-              <th>Module</th>
-              <th>Submodule</th>
-              <th style="text-align: right;">Total</th>
-              <th style="text-align: right;">Pass</th>
-              <th style="text-align: right;">Fail</th>
-              <th style="text-align: right;">On Hold</th>
-              <th style="text-align: right;">Pending</th>
-              <th style="text-align: right;">N/A</th>
-              <th style="text-align: right;">Taken care by functional team</th>
-              <th>Comments</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colspan="12" class="empty-state">Loading global entries...</td>
             </tr>
           </tbody>
         </table>
