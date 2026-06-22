@@ -73,10 +73,10 @@ class EntryServiceTest {
                 .module("Authentication")
                 .submodule("OAuth2")
                 .total(10)
-                .pass(5)
+                .pass(2)
                 .fail(2)
                 .onhold(1)
-                .pending(2)
+                .pending(5)
                 .comments("First batch")
                 .entryDate(LocalDate.now())
                 .createdAt(LocalDateTime.now())
@@ -86,7 +86,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenEntryDoesNotExist_CreatesNewEntry() {
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(any(), any(), any(), any(), any()))
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(any(), any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -104,7 +104,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenEntryExists_UpdatesExistingEntryWithNewCounts() {
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2"), eq(LocalDate.now())))
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2")))
                 .thenReturn(Optional.of(existingEntry));
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -138,7 +138,7 @@ class EntryServiceTest {
     void statusCalculation_LogicTests() {
         // Test case: total > 0 and pass == total -> Pass
         EntryRequestDTO d1 = EntryRequestDTO.builder().total(10).pass(10).fail(0).onhold(0).pending(0).build();
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(any(), any(), any(), any(), any())).thenReturn(Optional.empty());
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(any(), any(), any(), any())).thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
         assertEquals("Pass", entryService.upsertEntry(user, d1).getStatus());
 
@@ -165,7 +165,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenTotalProvided_CalculatesPendingCountAndDefaultsNullsToZero() {
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(any(), any(), any(), any(), any()))
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(any(), any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -204,6 +204,25 @@ class EntryServiceTest {
         assertEquals(0, res2.getNa());
         assertEquals(0, res2.getFunctionalTeam());
         assertEquals(3, res2.getPending()); // 20 - 10 - 5 - 2 = 3
+    }
+
+    @Test
+    void upsertEntry_WhenPassCountDecreased_ThrowsRuntimeException() {
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2")))
+                .thenReturn(Optional.of(existingEntry));
+
+        EntryRequestDTO invalidUpdateDTO = EntryRequestDTO.builder()
+                .project("Project Alpha")
+                .module("Authentication")
+                .submodule("OAuth2")
+                .total(10)
+                .pass(existingEntry.getPass() - 1)
+                .fail(1)
+                .onhold(0)
+                .pending(8)
+                .build();
+
+        assertThrows(RuntimeException.class, () -> entryService.upsertEntry(user, invalidUpdateDTO));
     }
 
     @Test

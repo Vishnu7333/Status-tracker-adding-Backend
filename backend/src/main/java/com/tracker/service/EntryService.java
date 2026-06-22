@@ -50,13 +50,16 @@ public class EntryService {
 
         String calculatedStatus = calculateStatus(totalVal, passVal, failVal, onholdVal, pendingVal, naVal, functionalTeamVal);
 
-        Optional<Entry> existingEntryOpt = entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(
-                user.getId(), dto.getProject(), dto.getModule(), dto.getSubmodule(), LocalDate.now()
+        Optional<Entry> existingEntryOpt = entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(
+                user.getId(), dto.getProject(), dto.getModule(), dto.getSubmodule()
         );
 
         Entry entryToSave;
         if (existingEntryOpt.isPresent()) {
             Entry existing = existingEntryOpt.get();
+            if (passVal < existing.getPass()) {
+                throw new RuntimeException("Pass count cannot be less than the previously saved count (" + existing.getPass() + ").");
+            }
 
             existing.setPass(passVal);
             existing.setFail(failVal);
@@ -67,6 +70,7 @@ public class EntryService {
             existing.setTotal(totalVal);
             existing.setStatus(calculatedStatus);
             existing.setComments(dto.getComments());
+            existing.setEntryDate(LocalDate.now());
 
             existing.setUpdatedAt(LocalDateTime.now());
             entryToSave = existing;

@@ -14,6 +14,8 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
 
     Optional<Entry> findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDate(UUID userId, String project, String module, String submodule, LocalDate date);
 
+    Optional<Entry> findByUserIdAndProjectAndModuleAndSubmodule(UUID userId, String project, String module, String submodule);
+
     List<Entry> findAllByOrderByEntryDateDesc();
 
     List<Entry> findByUserId(UUID userId);

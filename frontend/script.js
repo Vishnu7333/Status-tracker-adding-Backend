@@ -79,6 +79,31 @@ function toCount(value) {
   return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
+function getExistingPassCount() {
+  const proj = projectNameInput ? projectNameInput.value.trim() : '';
+  const mod = moduleInput ? moduleInput.value.trim() : '';
+  const sub = submoduleInput ? submoduleInput.value.trim() : '';
+  if (!proj || !mod || !sub) return 0;
+
+  // Check local draft records first
+  const draftExisting = records.find(r => 
+    r.project.toLowerCase() === proj.toLowerCase() && 
+    r.module.toLowerCase() === mod.toLowerCase() && 
+    r.submodule.toLowerCase() === sub.toLowerCase()
+  );
+  if (draftExisting) {
+    return draftExisting.pass || 0;
+  }
+
+  // Check saved history records
+  const historyExisting = historyRecords.find(r => 
+    r.project.toLowerCase() === proj.toLowerCase() && 
+    r.module.toLowerCase() === mod.toLowerCase() && 
+    r.submodule.toLowerCase() === sub.toLowerCase()
+  );
+  return historyExisting ? (historyExisting.pass || 0) : 0;
+}
+
 function setFormError(message) {
   if (formMessage) {
     formMessage.textContent = message;
@@ -464,6 +489,15 @@ async function parseTestcaseForm(event) {
     return;
   }
 
+  const existingPass = getExistingPassCount();
+  if (values.pass !== null && values.pass < existingPass) {
+    if (passCountInput) {
+      setFieldError(passCountInput, `Pass count cannot be less than the previously saved count (${existingPass}).`);
+      scrollToField(passCountInput);
+    }
+    return;
+  }
+
   const countFields = ['pass', 'fail', 'onhold', 'pending', 'na', 'functionalTeam'];
   const executionFields = ['pass', 'fail', 'onhold', 'pending', 'na', 'functionalTeam'];
   const blankExecutionFields = executionFields.filter((fieldName) => values[fieldName] === null);
@@ -540,7 +574,17 @@ async function parseTestcaseForm(event) {
   }
 
   // Add locally to draft workspace instead of hitting backend immediately
-  records.push(record);
+  const existingDraftIndex = records.findIndex(r => 
+    r.project.toLowerCase() === record.project.toLowerCase() &&
+    r.module.toLowerCase() === record.module.toLowerCase() &&
+    r.submodule.toLowerCase() === record.submodule.toLowerCase()
+  );
+
+  if (existingDraftIndex !== -1) {
+    records[existingDraftIndex] = record;
+  } else {
+    records.push(record);
+  }
   updateTable();
   updateDraftSummary();
 
@@ -1024,15 +1068,22 @@ function createHistoryRow(record) {
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
-      <button class="remove-history-button" data-id="${record.id}" aria-label="Remove record from database">
-        <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
-          <path d="M3 6h18" />
-          <path d="M8 6V4h8v2" />
-          <path d="M19 6l-1 14H6L5 6" />
-          <path d="M10 11v5" />
-          <path d="M14 11v5" />
-        </svg>
-      </button>
+      <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+        <button class="retrieve-button retrieve-history-button" data-id="${record.id}" title="Retrieve to fields for update" aria-label="Retrieve record">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+          </svg>
+        </button>
+        <button class="remove-button remove-history-button" data-id="${record.id}" aria-label="Remove record from database">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v5" />
+            <path d="M14 11v5" />
+          </svg>
+        </button>
+      </div>
     </td>
   `;
   return tr;
@@ -1231,6 +1282,44 @@ async function removeHistoryRecord(event) {
         setFormError('Error communicating with server.');
       }
     }
+  }
+}
+
+function retrieveHistoryRecord(id) {
+  const record = historyRecords.find(r => r.id === id);
+  if (!record) return;
+
+  if (projectNameInput) {
+    projectNameInput.value = record.project || '';
+    projectNameInput.dispatchEvent(new Event('input'));
+  }
+  if (moduleInput) moduleInput.value = record.module || '';
+  if (submoduleInput) submoduleInput.value = record.submodule || '';
+  if (totalCountInput) totalCountInput.value = record.total !== undefined ? record.total : '';
+  if (passCountInput) passCountInput.value = record.pass !== undefined ? record.pass : '';
+  if (failCountInput) failCountInput.value = record.fail !== undefined ? record.fail : '';
+  if (onholdCountInput) onholdCountInput.value = record.onhold !== undefined ? record.onhold : '';
+  if (naCountInput) naCountInput.value = record.na ? record.na : '';
+  if (functionalTeamCountInput) functionalTeamCountInput.value = record.functionalTeam ? record.functionalTeam : '';
+  if (commentInput) commentInput.value = record.comments || '';
+
+  calculatePending();
+  clearAllFieldErrors();
+  clearFormError();
+
+  if (projectNameInput) {
+    projectNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+async function handleHistoryTableClick(event) {
+  const removeBtn = event.target.closest('.remove-history-button');
+  const retrieveBtn = event.target.closest('.retrieve-history-button');
+
+  if (removeBtn) {
+    await removeHistoryRecord(event);
+  } else if (retrieveBtn) {
+    retrieveHistoryRecord(retrieveBtn.dataset.id);
   }
 }
 
@@ -1436,7 +1525,7 @@ function init() {
   
   const historyTable = document.getElementById('history-table');
   const historyTableBodyEl = historyTable ? historyTable.querySelector('tbody') : null;
-  if (historyTableBodyEl) historyTableBodyEl.addEventListener('click', removeHistoryRecord);
+  if (historyTableBodyEl) historyTableBodyEl.addEventListener('click', handleHistoryTableClick);
 
   if (exportButton) exportButton.addEventListener('click', exportSummary);
   if (exportExcelButton) exportExcelButton.addEventListener('click', downloadExcel);
