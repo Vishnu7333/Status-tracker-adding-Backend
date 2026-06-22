@@ -318,6 +318,12 @@ button:hover {
   font-weight: 800;
 }
 
+.image-report-grand-total td {
+  background: #fff2cc;
+  font-weight: 800;
+  color: #000000;
+}
+
 .table-section {
   overflow-x: auto;
 }
