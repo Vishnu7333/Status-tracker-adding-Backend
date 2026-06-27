@@ -390,13 +390,15 @@ function updateAdminProgressChart(entries) {
   entries.forEach(entry => {
     const date = entry.entryDate;
     if (!dailyData[date]) {
-      dailyData[date] = { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0 };
+      dailyData[date] = { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0, na: 0, functionalTeam: 0 };
     }
     dailyData[date].total += entry.total || 0;
     dailyData[date].pass += entry.pass || 0;
     dailyData[date].fail += entry.fail || 0;
     dailyData[date].onhold += entry.onhold || 0;
     dailyData[date].pending += entry.pending || 0;
+    dailyData[date].na += entry.na || 0;
+    dailyData[date].functionalTeam += entry.functionalTeam || 0;
   });
 
   const sortedDates = Object.keys(dailyData).sort();
@@ -409,10 +411,16 @@ function updateAdminProgressChart(entries) {
     }
   });
 
-  const totalPoints = sortedDates.map(d => dailyData[d].total);
   const passPoints = sortedDates.map(d => dailyData[d].pass);
   const failPoints = sortedDates.map(d => dailyData[d].fail);
   const onholdPoints = sortedDates.map(d => dailyData[d].onhold);
+  const pendingPoints = sortedDates.map(d => dailyData[d].pending);
+  const naPoints = sortedDates.map(d => dailyData[d].na);
+  const functionalTeamPoints = sortedDates.map(d => dailyData[d].functionalTeam);
+  const passRatePoints = sortedDates.map(d => {
+    const total = dailyData[d].total;
+    return total > 0 ? parseFloat((dailyData[d].pass / total * 100).toFixed(1)) : 0;
+  });
 
   if (adminProgressChart) {
     adminProgressChart.destroy();
@@ -424,53 +432,86 @@ function updateAdminProgressChart(entries) {
 
   const ctx = chartCanvas.getContext('2d');
   adminProgressChart = new Chart(ctx, {
-    type: 'line',
+    type: 'bar',
     data: {
       labels: labels,
       datasets: [
         {
-          label: 'Total Cases',
-          data: totalPoints,
-          borderColor: 'rgba(118, 215, 255, 0.8)',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          borderDash: [5, 5],
-          tension: 0.2,
-          pointRadius: 3
+          type: 'line',
+          label: 'Pass Rate (%)',
+          data: passRatePoints,
+          borderColor: '#6df5a4',
+          backgroundColor: 'rgba(109, 245, 164, 0.15)',
+          borderWidth: 3,
+          tension: 0.35,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          yAxisID: 'y1',
+          zIndex: 10
         },
         {
           label: 'Passed',
           data: passPoints,
-          borderColor: 'rgba(109, 245, 164, 0.9)',
-          backgroundColor: 'rgba(109, 245, 164, 0.05)',
-          fill: true,
-          borderWidth: 3,
-          tension: 0.2,
-          pointRadius: 4
+          backgroundColor: 'rgba(109, 245, 164, 0.85)',
+          borderColor: 'rgba(109, 245, 164, 1)',
+          borderWidth: 1,
+          stack: 'status',
+          yAxisID: 'y'
         },
         {
           label: 'Failed',
           data: failPoints,
-          borderColor: 'rgba(255, 106, 112, 0.9)',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          tension: 0.2,
-          pointRadius: 3
+          backgroundColor: 'rgba(255, 106, 112, 0.85)',
+          borderColor: 'rgba(255, 106, 112, 1)',
+          borderWidth: 1,
+          stack: 'status',
+          yAxisID: 'y'
         },
         {
           label: 'On Hold',
           data: onholdPoints,
-          borderColor: 'rgba(255, 196, 105, 0.9)',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          tension: 0.2,
-          pointRadius: 3
+          backgroundColor: 'rgba(255, 196, 105, 0.85)',
+          borderColor: 'rgba(255, 196, 105, 1)',
+          borderWidth: 1,
+          stack: 'status',
+          yAxisID: 'y'
+        },
+        {
+          label: 'Pending',
+          data: pendingPoints,
+          backgroundColor: 'rgba(255, 213, 79, 0.85)',
+          borderColor: 'rgba(255, 213, 79, 1)',
+          borderWidth: 1,
+          stack: 'status',
+          yAxisID: 'y'
+        },
+        {
+          label: 'N/A',
+          data: naPoints,
+          backgroundColor: 'rgba(176, 133, 245, 0.85)',
+          borderColor: 'rgba(176, 133, 245, 1)',
+          borderWidth: 1,
+          stack: 'status',
+          yAxisID: 'y'
+        },
+        {
+          label: 'Functional Team',
+          data: functionalTeamPoints,
+          backgroundColor: 'rgba(244, 114, 182, 0.85)',
+          borderColor: 'rgba(244, 114, 182, 1)',
+          borderWidth: 1,
+          stack: 'status',
+          yAxisID: 'y'
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
       plugins: {
         legend: {
           position: 'top',
@@ -480,8 +521,22 @@ function updateAdminProgressChart(entries) {
           }
         },
         tooltip: {
-          mode: 'index',
-          intersect: false
+          callbacks: {
+            label: function(context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed.y !== null) {
+                if (context.datasetIndex === 0) {
+                  label += context.parsed.y + '%';
+                } else {
+                  label += context.parsed.y + ' cases';
+                }
+              }
+              return label;
+            }
+          }
         }
       },
       scales: {
@@ -490,9 +545,39 @@ function updateAdminProgressChart(entries) {
           ticks: { color: '#b2c0f0', font: { family: 'Inter, sans-serif' } }
         },
         y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          stacked: true,
           grid: { color: 'rgba(255,255,255,0.05)' },
           ticks: { color: '#b2c0f0', font: { family: 'Inter, sans-serif' } },
-          min: 0
+          title: {
+            display: true,
+            text: 'Number of Cases',
+            color: '#b2c0f0',
+            font: { family: 'Inter, sans-serif', weight: 'bold' }
+          }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          min: 0,
+          max: 100,
+          grid: { drawOnChartArea: false },
+          ticks: {
+            color: '#6df5a4',
+            font: { family: 'Inter, sans-serif' },
+            callback: function(value) {
+              return value + '%';
+            }
+          },
+          title: {
+            display: true,
+            text: 'Pass Rate (%)',
+            color: '#6df5a4',
+            font: { family: 'Inter, sans-serif', weight: 'bold' }
+          }
         }
       }
     }
