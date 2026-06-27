@@ -1305,8 +1305,8 @@ function updateProgressChart() {
           type: 'line',
           label: 'Pass Rate (%)',
           data: passRatePoints,
-          borderColor: '#6df5a4',
-          backgroundColor: 'rgba(109, 245, 164, 0.15)',
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74, 222, 128, 0.15)',
           borderWidth: 3,
           tension: 0.35,
           pointRadius: 4,
@@ -1317,8 +1317,8 @@ function updateProgressChart() {
         {
           label: 'Passed',
           data: passPoints,
-          backgroundColor: 'rgba(109, 245, 164, 0.85)',
-          borderColor: 'rgba(109, 245, 164, 1)',
+          backgroundColor: 'rgba(74, 222, 128, 0.85)',
+          borderColor: 'rgba(74, 222, 128, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1326,8 +1326,8 @@ function updateProgressChart() {
         {
           label: 'Failed',
           data: failPoints,
-          backgroundColor: 'rgba(255, 106, 112, 0.85)',
-          borderColor: 'rgba(255, 106, 112, 1)',
+          backgroundColor: 'rgba(248, 113, 113, 0.85)',
+          borderColor: 'rgba(248, 113, 113, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1335,8 +1335,8 @@ function updateProgressChart() {
         {
           label: 'On Hold',
           data: onholdPoints,
-          backgroundColor: 'rgba(255, 196, 105, 0.85)',
-          borderColor: 'rgba(255, 196, 105, 1)',
+          backgroundColor: 'rgba(245, 158, 11, 0.85)',
+          borderColor: 'rgba(245, 158, 11, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1344,8 +1344,8 @@ function updateProgressChart() {
         {
           label: 'Pending',
           data: pendingPoints,
-          backgroundColor: 'rgba(255, 213, 79, 0.85)',
-          borderColor: 'rgba(255, 213, 79, 1)',
+          backgroundColor: 'rgba(250, 204, 21, 0.85)',
+          borderColor: 'rgba(250, 204, 21, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1353,8 +1353,8 @@ function updateProgressChart() {
         {
           label: 'N/A',
           data: naPoints,
-          backgroundColor: 'rgba(176, 133, 245, 0.85)',
-          borderColor: 'rgba(176, 133, 245, 1)',
+          backgroundColor: 'rgba(167, 139, 250, 0.85)',
+          borderColor: 'rgba(167, 139, 250, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1381,7 +1381,7 @@ function updateProgressChart() {
         legend: {
           position: 'top',
           labels: {
-            color: '#e7ecff',
+            color: '#e2e8f0',
             font: { family: 'Inter, sans-serif', size: 11 }
           }
         },
@@ -1431,7 +1431,7 @@ function updateProgressChart() {
           max: 100,
           grid: { drawOnChartArea: false },
           ticks: {
-            color: '#6df5a4',
+            color: '#4ade80',
             font: { family: 'Inter, sans-serif' },
             callback: function(value) {
               return value + '%';
@@ -1440,7 +1440,7 @@ function updateProgressChart() {
           title: {
             display: true,
             text: 'Pass Rate (%)',
-            color: '#6df5a4',
+            color: '#4ade80',
             font: { family: 'Inter, sans-serif', weight: 'bold' }
           }
         }
@@ -1591,7 +1591,7 @@ async function completeProcess() {
       if (formMessage) {
         formMessage.textContent = 'Process completed! All entries saved successfully.';
         formMessage.classList.remove('error');
-        formMessage.style.color = '#6df5a4';
+        formMessage.style.color = '#4ade80';
         setTimeout(() => {
           formMessage.textContent = '';
           formMessage.style.color = '';
