@@ -60,9 +60,68 @@ function validateProjectNameInput(input) {
   });
 }
 
+const submodulesMap = {
+  'FIN': ['General Ledger', 'Payables', 'Receivables', 'Fixed Assets', 'Cash Management', 'Expenses', 'Tax'],
+  'HCM': ['Core HR', 'Payroll', 'Benefits', 'Talent Management', 'Learning', 'Workforce Management'],
+  'SCM': ['Procurement', 'Inventory', 'Product Management', 'Manufacturing', 'Order Management', 'Logistics'],
+  'WMS': ['Warehouse Operations', 'Inventory Tracking', 'Receiving', 'Shipping', 'Cycle Counting'],
+  'ORC': ['Recruiting', 'Candidate Experience', 'Job Requisitions', 'Offers', 'Onboarding integrations']
+};
+
+function populateModules(selectedValue = '') {
+  if (!moduleInput) return;
+  const standardModules = ['FIN', 'HCM', 'SCM', 'WMS', 'ORC'];
+  
+  const currentVal = selectedValue || moduleInput.value;
+  moduleInput.innerHTML = '<option value="" disabled selected>Select Module</option>';
+  
+  const modulesList = [...standardModules];
+  if (currentVal && !modulesList.includes(currentVal)) {
+    modulesList.push(currentVal);
+  }
+  
+  modulesList.forEach(mod => {
+    const opt = document.createElement('option');
+    opt.value = mod;
+    opt.textContent = mod;
+    moduleInput.appendChild(opt);
+  });
+  
+  if (currentVal) {
+    moduleInput.value = currentVal;
+  }
+}
+
+function populateSubmodules(selectedModule, selectedValue = '') {
+  if (!submoduleInput) return;
+  
+  const currentVal = selectedValue || submoduleInput.value;
+  submoduleInput.innerHTML = '<option value="" disabled selected>Select Submodule</option>';
+  
+  if (!selectedModule) {
+    submoduleInput.disabled = true;
+    return;
+  }
+  
+  const subList = submodulesMap[selectedModule] ? [...submodulesMap[selectedModule]] : [];
+  if (currentVal && !subList.includes(currentVal) && currentVal !== 'Select Submodule') {
+    subList.push(currentVal);
+  }
+  
+  subList.forEach(sub => {
+    const opt = document.createElement('option');
+    opt.value = sub;
+    opt.textContent = sub;
+    submoduleInput.appendChild(opt);
+  });
+  
+  submoduleInput.disabled = subList.length === 0;
+  if (currentVal && subList.includes(currentVal)) {
+    submoduleInput.value = currentVal;
+  }
+}
+
 if (projectNameInput) validateProjectNameInput(projectNameInput);
-if (moduleInput) validateAlphabetsOnly(moduleInput);
-if (submoduleInput) validateAlphabetsOnly(submoduleInput);
 
 function readOptionalCount(input) {
   const rawValue = input.value.trim();
@@ -596,8 +655,10 @@ async function parseTestcaseForm(event) {
   updateDraftSummary();
 
   // Clear submodule specific inputs
-  if (moduleInput) moduleInput.value = '';
-  if (submoduleInput) submoduleInput.value = '';
+  if (moduleInput) {
+    moduleInput.value = '';
+    populateSubmodules('');
+  }
   if (totalCountInput) totalCountInput.value = '';
   if (passCountInput) passCountInput.value = '';
   if (failCountInput) failCountInput.value = '';
@@ -1332,8 +1393,10 @@ function retrieveHistoryRecord(id) {
     projectNameInput.value = record.project || '';
     projectNameInput.dispatchEvent(new Event('input'));
   }
-  if (moduleInput) moduleInput.value = record.module || '';
-  if (submoduleInput) submoduleInput.value = record.submodule || '';
+  if (moduleInput) {
+    populateModules(record.module || '');
+    populateSubmodules(record.module || '', record.submodule || '');
+  }
   if (totalCountInput) totalCountInput.value = record.total !== undefined ? record.total : '';
   if (passCountInput) passCountInput.value = record.pass !== undefined ? record.pass : '';
   if (failCountInput) failCountInput.value = record.fail !== undefined ? record.fail : '';
@@ -1541,8 +1604,10 @@ function handleSwitchUser() {
   updateDraftSummary();
   
   if (projectNameInput) projectNameInput.value = '';
-  if (moduleInput) moduleInput.value = '';
-  if (submoduleInput) submoduleInput.value = '';
+  if (moduleInput) {
+    moduleInput.value = '';
+    populateSubmodules('');
+  }
   if (totalCountInput) totalCountInput.value = '';
   if (passCountInput) passCountInput.value = '';
   if (failCountInput) failCountInput.value = '';
@@ -1563,6 +1628,15 @@ function handleSwitchUser() {
 }
 
 function init() {
+  // Initialize module and submodule dropdowns
+  populateModules('');
+  populateSubmodules('');
+  if (moduleInput) {
+    moduleInput.addEventListener('change', () => {
+      populateSubmodules(moduleInput.value);
+    });
+  }
+
   if (testcaseForm) testcaseForm.addEventListener('submit', parseTestcaseForm);
   if (testcaseTableBody) testcaseTableBody.addEventListener('click', removeDraftRecord);
   
