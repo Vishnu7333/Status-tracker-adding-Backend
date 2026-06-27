@@ -56,9 +56,9 @@ function showMessage(msg, isError = false) {
   if (!messageBanner) return;
   messageBanner.textContent = msg;
   messageBanner.style.display = 'block';
-  messageBanner.style.background = isError ? 'rgba(255, 106, 112, 0.15)' : 'rgba(109, 245, 164, 0.15)';
-  messageBanner.style.color = isError ? '#ff6a70' : '#6df5a4';
-  messageBanner.style.border = `1px solid ${isError ? 'rgba(255, 106, 112, 0.3)' : 'rgba(109, 245, 164, 0.3)'}`;
+  messageBanner.style.background = isError ? 'rgba(248, 113, 113, 0.15)' : 'rgba(74, 222, 128, 0.15)';
+  messageBanner.style.color = isError ? '#f87171' : '#4ade80';
+  messageBanner.style.border = `1px solid ${isError ? 'rgba(248, 113, 113, 0.3)' : 'rgba(74, 222, 128, 0.3)'}`;
 }
 
 function hideMessage() {
@@ -151,7 +151,7 @@ function updateUsersTableUI(users) {
     const dateStr = user.createdAt ? formatDateToDdMmmYyyy(user.createdAt) : 'N/A';
 
     const row = document.createElement('tr');
-    row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    row.style.borderBottom = '1px solid #2d313c';
     row.style.height = '3.5rem';
     row.innerHTML = `
       <td>
@@ -296,16 +296,16 @@ function renderDailySummaryForDate(selectedDate) {
     else if (passRate >= 50) rateClass = 'rate-med';
 
     const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    tr.style.borderBottom = '1px solid #2d313c';
     tr.style.height = '3.5rem';
     tr.innerHTML = `
-      <td style="font-weight: 800; color: #76d7ff;">${escapeHtml(g.project)}</td>
-      <td style="text-align: right; font-weight: 700; color: #ffffff;">${g.total}</td>
-      <td style="text-align: right; color: #6df5a4; font-weight: 600;">${g.pass}</td>
-      <td style="text-align: right; color: #ff6a70; font-weight: 600;">${g.fail}</td>
-      <td style="text-align: right; color: #ffc469; font-weight: 600;">${g.onhold}</td>
-      <td style="text-align: right; color: #ffd54f; font-weight: 600;">${g.pending}</td>
-      <td style="text-align: right; color: #b085f5; font-weight: 600;">${g.na}</td>
+      <td style="font-weight: 800; color: #38bdf8;">${escapeHtml(g.project)}</td>
+      <td style="text-align: right; font-weight: 700; color: #e2e8f0;">${g.total}</td>
+      <td style="text-align: right; color: #4ade80; font-weight: 600;">${g.pass}</td>
+      <td style="text-align: right; color: #f87171; font-weight: 600;">${g.fail}</td>
+      <td style="text-align: right; color: #f59e0b; font-weight: 600;">${g.onhold}</td>
+      <td style="text-align: right; color: #facc15; font-weight: 600;">${g.pending}</td>
+      <td style="text-align: right; color: #a78bfa; font-weight: 600;">${g.na}</td>
       <td style="text-align: right; color: #f472b6; font-weight: 600;">${g.functionalTeam}</td>
       <td style="text-align: right;">
         <span class="rate-badge ${rateClass}">${passRate.toFixed(1)}%</span>
@@ -358,21 +358,21 @@ function updateTotalCompletionTableUI(entries) {
     else if (passRate >= 50) rateClass = 'rate-med';
 
     const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    tr.style.borderBottom = '1px solid #2d313c';
     tr.style.height = '3.5rem';
     tr.innerHTML = `
-      <td style="font-weight: 800; color: #76d7ff;">${escapeHtml(g.project)}</td>
-      <td style="text-align: right; font-weight: 700; color: #ffffff;">${g.total}</td>
-      <td style="text-align: right; color: #6df5a4; font-weight: 600;">${g.pass}</td>
-      <td style="text-align: right; color: #ff6a70; font-weight: 600;">${g.fail}</td>
-      <td style="text-align: right; color: #ffc469; font-weight: 600;">${g.onhold}</td>
-      <td style="text-align: right; color: #ffd54f; font-weight: 600;">${g.pending}</td>
-      <td style="text-align: right; color: #b085f5; font-weight: 600;">${g.na}</td>
+      <td style="font-weight: 800; color: #38bdf8;">${escapeHtml(g.project)}</td>
+      <td style="text-align: right; font-weight: 700; color: #e2e8f0;">${g.total}</td>
+      <td style="text-align: right; color: #4ade80; font-weight: 600;">${g.pass}</td>
+      <td style="text-align: right; color: #f87171; font-weight: 600;">${g.fail}</td>
+      <td style="text-align: right; color: #f59e0b; font-weight: 600;">${g.onhold}</td>
+      <td style="text-align: right; color: #facc15; font-weight: 600;">${g.pending}</td>
+      <td style="text-align: right; color: #a78bfa; font-weight: 600;">${g.na}</td>
       <td style="text-align: right; color: #f472b6; font-weight: 600;">${g.functionalTeam}</td>
       <td style="text-align: right; vertical-align: middle;">
         <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;">
-          <div style="width: 80px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; position: relative;">
-            <div style="width: ${passRate}%; height: 100%; background: ${passRate >= 80 ? '#6df5a4' : passRate >= 50 ? '#ffc469' : '#ff6a70'}; border-radius: 4px;"></div>
+          <div style="width: 80px; height: 8px; background: #191c24; border-radius: 4px; overflow: hidden; position: relative;">
+            <div style="width: ${passRate}%; height: 100%; background: ${passRate >= 80 ? '#4ade80' : passRate >= 50 ? '#f59e0b' : '#f87171'}; border-radius: 4px;"></div>
           </div>
           <span class="rate-badge ${rateClass}" style="margin: 0; min-width: 55px; text-align: right;">${passRate.toFixed(1)}%</span>
         </div>
@@ -447,8 +447,8 @@ function updateAdminProgressChart(entries) {
           type: 'line',
           label: 'Pass Rate (%)',
           data: passRatePoints,
-          borderColor: '#6df5a4',
-          backgroundColor: 'rgba(109, 245, 164, 0.15)',
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74, 222, 128, 0.15)',
           borderWidth: 3,
           tension: 0.35,
           pointRadius: 4,
@@ -459,8 +459,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'Passed',
           data: passPoints,
-          backgroundColor: 'rgba(109, 245, 164, 0.85)',
-          borderColor: 'rgba(109, 245, 164, 1)',
+          backgroundColor: 'rgba(74, 222, 128, 0.85)',
+          borderColor: 'rgba(74, 222, 128, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -468,8 +468,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'Failed',
           data: failPoints,
-          backgroundColor: 'rgba(255, 106, 112, 0.85)',
-          borderColor: 'rgba(255, 106, 112, 1)',
+          backgroundColor: 'rgba(248, 113, 113, 0.85)',
+          borderColor: 'rgba(248, 113, 113, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -477,8 +477,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'On Hold',
           data: onholdPoints,
-          backgroundColor: 'rgba(255, 196, 105, 0.85)',
-          borderColor: 'rgba(255, 196, 105, 1)',
+          backgroundColor: 'rgba(245, 158, 11, 0.85)',
+          borderColor: 'rgba(245, 158, 11, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -486,8 +486,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'Pending',
           data: pendingPoints,
-          backgroundColor: 'rgba(255, 213, 79, 0.85)',
-          borderColor: 'rgba(255, 213, 79, 1)',
+          backgroundColor: 'rgba(250, 204, 21, 0.85)',
+          borderColor: 'rgba(250, 204, 21, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -495,8 +495,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'N/A',
           data: naPoints,
-          backgroundColor: 'rgba(176, 133, 245, 0.85)',
-          borderColor: 'rgba(176, 133, 245, 1)',
+          backgroundColor: 'rgba(167, 139, 250, 0.85)',
+          borderColor: 'rgba(167, 139, 250, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -523,7 +523,7 @@ function updateAdminProgressChart(entries) {
         legend: {
           position: 'top',
           labels: {
-            color: '#e7ecff',
+            color: '#e2e8f0',
             font: { family: 'Inter, sans-serif', size: 11 }
           }
         },
@@ -573,7 +573,7 @@ function updateAdminProgressChart(entries) {
           max: 100,
           grid: { drawOnChartArea: false },
           ticks: {
-            color: '#6df5a4',
+            color: '#4ade80',
             font: { family: 'Inter, sans-serif' },
             callback: function(value) {
               return value + '%';
@@ -582,7 +582,7 @@ function updateAdminProgressChart(entries) {
           title: {
             display: true,
             text: 'Pass Rate (%)',
-            color: '#6df5a4',
+            color: '#4ade80',
             font: { family: 'Inter, sans-serif', weight: 'bold' }
           }
         }
