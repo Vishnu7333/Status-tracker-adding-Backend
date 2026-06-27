@@ -36,14 +36,21 @@
         <form id="testcase-form">
           <label>
             Module
-            <input id="module-name" type="text" pattern="[A-Za-z ]+" 
-              placeholder="Enter module name" title="Letters only" required />
+            <select id="module-name" required>
+              <option value="" disabled selected>Select Module</option>
+              <option value="FIN">FIN</option>
+              <option value="HCM">HCM</option>
+              <option value="SCM">SCM</option>
+              <option value="WMS">WMS</option>
+              <option value="ORC">ORC</option>
+            </select>
             <span class="field-error" id="module-name-error" aria-live="polite"></span>
           </label>
           <label>
             Submodule
-            <input id="submodule-name" type="text" pattern="[A-Za-z ]+" 
-              placeholder="Enter submodule name" title="Letters only" required />
+            <select id="submodule-name" required disabled>
+              <option value="" disabled selected>Select Submodule</option>
+            </select>
             <span class="field-error" id="submodule-name-error" aria-live="polite"></span>
           </label>
           <label>
