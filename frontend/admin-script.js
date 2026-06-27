@@ -383,8 +383,12 @@ function updateTotalCompletionTableUI(entries) {
 }
 
 function updateAdminProgressChart(entries) {
+  console.log('updateAdminProgressChart called with entries:', entries);
   const chartCanvas = document.getElementById('admin-progress-chart');
-  if (!chartCanvas) return;
+  if (!chartCanvas) {
+    console.log('admin-progress-chart canvas not found!');
+    return;
+  }
 
   const dailyData = {};
   entries.forEach(entry => {
@@ -402,6 +406,7 @@ function updateAdminProgressChart(entries) {
   });
 
   const sortedDates = Object.keys(dailyData).sort();
+  console.log('Sorted chart dates:', sortedDates);
 
   const labels = sortedDates.map(dateStr => {
     try {
@@ -427,10 +432,12 @@ function updateAdminProgressChart(entries) {
   }
 
   if (sortedDates.length === 0) {
+    console.log('No chart dates available, returning early.');
     return;
   }
 
   const ctx = chartCanvas.getContext('2d');
+  console.log('Initializing Chart.js bar combo chart on admin canvas');
   adminProgressChart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -582,6 +589,7 @@ function updateAdminProgressChart(entries) {
       }
     }
   });
+  console.log('Admin combo chart successfully initialized');
 }
 
 function updateOverallSummaryUI(summary) {
