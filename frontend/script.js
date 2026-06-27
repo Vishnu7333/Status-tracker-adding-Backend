@@ -93,17 +93,23 @@ function populateModules(selectedValue = '') {
 }
 
 function populateSubmodules(selectedModule, selectedValue = '') {
-  if (!submoduleInput) return;
+  console.log('populateSubmodules called with selectedModule:', selectedModule, 'selectedValue:', selectedValue);
+  if (!submoduleInput) {
+    console.log('submoduleInput element not found!');
+    return;
+  }
   
   const currentVal = selectedValue || submoduleInput.value;
   submoduleInput.innerHTML = '<option value="" disabled selected>Select Submodule</option>';
   
   if (!selectedModule) {
+    console.log('No selectedModule, disabling submoduleInput');
     submoduleInput.disabled = true;
     return;
   }
   
   const subList = submodulesMap[selectedModule] ? [...submodulesMap[selectedModule]] : [];
+  console.log('Found subList for module:', selectedModule, subList);
   if (currentVal && !subList.includes(currentVal) && currentVal !== 'Select Submodule') {
     subList.push(currentVal);
   }
@@ -119,6 +125,7 @@ function populateSubmodules(selectedModule, selectedValue = '') {
   if (currentVal && subList.includes(currentVal)) {
     submoduleInput.value = currentVal;
   }
+  console.log('submoduleInput enabled:', !submoduleInput.disabled, 'options count:', submoduleInput.options.length);
 }
 
 if (projectNameInput) validateProjectNameInput(projectNameInput);
@@ -1632,7 +1639,9 @@ function init() {
   populateModules('');
   populateSubmodules('');
   if (moduleInput) {
+    console.log('Registered change event listener on moduleInput');
     moduleInput.addEventListener('change', () => {
+      console.log('moduleInput changed event fired. New value:', moduleInput.value);
       populateSubmodules(moduleInput.value);
     });
   }
