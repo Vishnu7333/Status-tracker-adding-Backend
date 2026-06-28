@@ -7,6 +7,22 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <style>
+    .excel-btn {
+      background: #15803d !important;
+      border: 1px solid #166534 !important;
+      color: #ffffff !important;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease !important;
+    }
+    .excel-btn:hover {
+      background: #166534 !important;
+      border-color: #14532d !important;
+      transform: translateY(-1px);
+    }
+    .excel-btn:active {
+      transform: translateY(0);
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -84,7 +100,7 @@
             <span style="font-weight: 600; font-size: 0.95rem; color: rgba(231, 236, 255, 0.8);">To:</span>
             <input type="date" id="admin-date-to" style="padding: 0.5rem 1rem; border-radius: 10px; background: #191c24; color: #fff; border: 1px solid #2d313c; cursor: pointer;">
           </div>
-          <button id="admin-download-date-wise" class="nav-btn" style="padding: 0.5rem 1.1rem; font-size: 0.88rem;">Download Excel 📥</button>
+          <button id="admin-download-date-wise" class="nav-btn excel-btn" style="padding: 0.5rem 1.1rem; font-size: 0.88rem;">Download Excel 📥</button>
         </div>
       </div>
       <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Progress details tracked on the selected day.</p>
@@ -116,7 +132,7 @@
     <section class="admin-section card" style="margin-top: 2rem;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
         <h2 style="margin: 0;">Total Completion Summary</h2>
-        <button id="admin-download-total-completion" class="nav-btn" style="padding: 0.5rem 1.1rem; font-size: 0.88rem;">Download Excel 📥</button>
+        <button id="admin-download-total-completion" class="nav-btn excel-btn" style="padding: 0.5rem 1.1rem; font-size: 0.88rem;">Download Excel 📥</button>
       </div>
       <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Cumulative status counts and completion progress aggregated for each project.</p>
       <div class="table-container" style="overflow-x: auto;">
