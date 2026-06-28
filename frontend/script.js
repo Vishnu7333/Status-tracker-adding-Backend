@@ -1621,6 +1621,7 @@ function extractNameFromEmail(email) {
 const loginModal = document.getElementById('login-modal');
 const loginForm = document.getElementById('login-form');
 const loginEmailInput = document.getElementById('login-email-input');
+const loginUsernameInput = document.getElementById('login-username-input');
 const currentUserDisplay = document.getElementById('current-user-display');
 const switchUserBtn = document.getElementById('switch-user-btn');
 const adminDashboardBtn = document.getElementById('admin-dashboard-btn');
@@ -1639,6 +1640,8 @@ function checkUserSession() {
 }
 
 function showLoginModal() {
+  if (loginEmailInput) loginEmailInput.value = '';
+  if (loginUsernameInput) loginUsernameInput.value = '';
   if (loginModal) {
     loginModal.style.display = 'flex';
   }
@@ -1666,14 +1669,14 @@ function updateProfileUI(name, email) {
 function handleLoginSubmit(event) {
   event.preventDefault();
   const email = loginEmailInput ? loginEmailInput.value.trim() : '';
-  if (!email) return;
+  const username = loginUsernameInput ? loginUsernameInput.value.trim() : '';
+  if (!email || !username) return;
   
-  const name = extractNameFromEmail(email);
   localStorage.setItem('userEmail', email);
-  localStorage.setItem('userName', name);
+  localStorage.setItem('userName', username);
   
   hideLoginModal();
-  updateProfileUI(name, email);
+  updateProfileUI(username, email);
   
   // Clear draft
   records.length = 0;
