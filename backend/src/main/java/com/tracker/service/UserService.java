@@ -36,10 +36,12 @@ public class UserService {
                     if (duplicateEntries != null && !duplicateEntries.isEmpty()) {
                         for (Entry entry : duplicateEntries) {
                             entry.setUser(user);
-                            entryRepository.save(entry);
                         }
+                        entryRepository.saveAll(duplicateEntries);
+                        entryRepository.flush();
                     }
                     userRepository.delete(duplicateUser);
+                    userRepository.flush();
                 }
             }
             
