@@ -47,7 +47,7 @@ class UserServiceTest {
 
     @Test
     void getOrCreateUser_WhenUserExists_ReturnsExistingUser() {
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(employeeUser));
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(employeeUser));
 
         User result = userService.getOrCreateUser("test@example.com", "Test User");
 
@@ -59,7 +59,7 @@ class UserServiceTest {
 
     @Test
     void getOrCreateUser_WhenUserExistsWithDifferentDisplayName_UpdatesDisplayName() {
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(employeeUser));
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(employeeUser));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = userService.getOrCreateUser("test@example.com", "Updated Display Name");
@@ -78,7 +78,7 @@ class UserServiceTest {
                 .displayName("Admin User")
                 .role(Role.EMPLOYEE)
                 .build();
-        when(userRepository.findByEmail("vvnair7333@gmail.com")).thenReturn(Optional.of(existingUserWithAdminEmail));
+        when(userRepository.findByEmailIgnoreCase("vvnair7333@gmail.com")).thenReturn(Optional.of(existingUserWithAdminEmail));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = userService.getOrCreateUser("vvnair7333@gmail.com", "Admin User");
@@ -90,7 +90,7 @@ class UserServiceTest {
 
     @Test
     void getOrCreateUser_WhenUserDoesNotExist_CreatesAndReturnsNewUser() {
-        when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("new@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User u = invocation.getArgument(0);
             u.setId(UUID.randomUUID());

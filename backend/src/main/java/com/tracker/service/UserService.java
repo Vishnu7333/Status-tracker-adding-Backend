@@ -20,15 +20,19 @@ public class UserService {
 
     @Transactional
     public User getOrCreateUser(String email, String displayName) {
-        return userRepository.findByEmail(email)
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        return userRepository.findByEmailIgnoreCase(normalizedEmail)
                 .map(user -> {
                     boolean updated = false;
                     if (displayName != null && !displayName.trim().isEmpty() && !displayName.equals(user.getDisplayName())) {
                         user.setDisplayName(displayName);
                         updated = true;
                     }
-                    String emailLower = email.toLowerCase();
-                    if (emailLower.equals("vvnair7333@gmail.com") && user.getRole() != Role.ADMIN) {
+                    if (!normalizedEmail.equals(user.getEmail())) {
+                        user.setEmail(normalizedEmail);
+                        updated = true;
+                    }
+                    if (normalizedEmail.equals("vvnair7333@gmail.com") && user.getRole() != Role.ADMIN) {
                         user.setRole(Role.ADMIN);
                         updated = true;
                     }
@@ -39,12 +43,11 @@ public class UserService {
                 })
                 .orElseGet(() -> {
                     Role role = Role.EMPLOYEE;
-                    String emailLower = email.toLowerCase();
-                    if (emailLower.equals("vvnair7333@gmail.com")) {
+                    if (normalizedEmail.equals("vvnair7333@gmail.com")) {
                         role = Role.ADMIN;
                     }
                     User newUser = User.builder()
-                            .email(email)
+                            .email(normalizedEmail)
                             .displayName(displayName)
                             .role(role)
                             .build();
