@@ -1662,12 +1662,15 @@ async function updateProfileUI(name, email) {
     currentUserDisplay.textContent = name;
   }
   
-  // Hide by default initially
+  const emailLower = email.toLowerCase();
+  const isHardcodedAdmin = emailLower === 'vvnair7333@gmail.com';
+
+  // If hardcoded admin, show it immediately so they don't lose access if backend is offline/deploying
   if (adminDashboardBtn) {
-    adminDashboardBtn.style.display = 'none';
+    adminDashboardBtn.style.display = isHardcodedAdmin ? 'inline-flex' : 'none';
   }
 
-  // Fetch profile to check role dynamically
+  // Verify role dynamically in the background
   try {
     const response = await fetch(`${BASE_URL}/api/users/me`, {
       method: 'GET',
@@ -1677,19 +1680,14 @@ async function updateProfileUI(name, email) {
       const result = await response.json();
       if (result && result.success && result.data) {
         const role = result.data.role;
+        const isAdmin = (role === 'ADMIN') || isHardcodedAdmin;
         if (adminDashboardBtn) {
-          adminDashboardBtn.style.display = (role === 'ADMIN') ? 'inline-flex' : 'none';
+          adminDashboardBtn.style.display = isAdmin ? 'inline-flex' : 'none';
         }
       }
     }
   } catch (error) {
     console.error('Failed to fetch user profile:', error);
-    // Fallback: If network fails, allow hardcoded vvnair7333@gmail.com to see it
-    const emailLower = email.toLowerCase();
-    const isAdmin = emailLower === 'vvnair7333@gmail.com';
-    if (adminDashboardBtn) {
-      adminDashboardBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-    }
   }
 }
 
