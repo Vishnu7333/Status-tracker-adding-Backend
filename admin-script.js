@@ -34,7 +34,7 @@ function formatDateToDdMmmYyyy(dateInput) {
   return `${dayStr}-${monthName}-${year}`;
 }
 
-function checkAdminSession() {
+async function checkAdminSession() {
   const email = localStorage.getItem('userEmail') || '';
   const name = localStorage.getItem('userName') || '';
   if (!email || !name) {
@@ -43,9 +43,31 @@ function checkAdminSession() {
   }
   
   const emailLower = email.toLowerCase();
-  const isAdmin = emailLower === 'vvnair7333@gmail.com';
-  if (!isAdmin) {
-    window.location.href = 'index.html';
+  const isHardcodedAdmin = emailLower === 'vvnair7333@gmail.com';
+  
+  try {
+    const response = await fetch(`${BASE_URL}/api/users/me`, {
+      method: 'GET',
+      headers: API_HEADERS
+    });
+    if (response.ok) {
+      const result = await response.json();
+      if (result && result.success && result.data) {
+        const role = result.data.role;
+        if (role !== 'ADMIN') {
+          window.location.href = 'index.html';
+        }
+      } else if (!isHardcodedAdmin) {
+        window.location.href = 'index.html';
+      }
+    } else if (!isHardcodedAdmin) {
+      window.location.href = 'index.html';
+    }
+  } catch (error) {
+    console.error('Failed to verify admin session:', error);
+    if (!isHardcodedAdmin) {
+      window.location.href = 'index.html';
+    }
   }
 }
 checkAdminSession();
