@@ -294,7 +294,7 @@ class EntryServiceTest {
 
     @Test
     void getOverallSummary_CalculatesGlobalSummary() {
-        Entry entry1 = Entry.builder().total(5).pass(5).fail(0).onhold(0).pending(0).build();
+        Entry entry1 = Entry.builder().total(5).pass(5).fail(0).onhold(0).pending(0).entryDate(LocalDate.now()).build();
         when(entryRepository.findAll()).thenReturn(Collections.singletonList(entry1));
 
         SummaryDTO summary = entryService.getOverallSummary();

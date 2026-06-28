@@ -130,7 +130,13 @@ public class EntryService {
     @Transactional(readOnly = true)
     public SummaryDTO getOverallSummary() {
         List<Entry> entries = entryRepository.findAll();
-        return aggregateEntries(entries);
+        java.time.LocalDate now = java.time.LocalDate.now();
+        List<Entry> currentMonthEntries = entries.stream()
+                .filter(e -> e.getEntryDate() != null && 
+                             e.getEntryDate().getYear() == now.getYear() && 
+                             e.getEntryDate().getMonth() == now.getMonth())
+                .collect(Collectors.toList());
+        return aggregateEntries(currentMonthEntries);
     }
 
     @Transactional(readOnly = true)
