@@ -1657,16 +1657,39 @@ function hideLoginModal() {
   }
 }
 
-function updateProfileUI(name, email) {
+async function updateProfileUI(name, email) {
   if (currentUserDisplay) {
     currentUserDisplay.textContent = name;
   }
   
-  // Update Admin button visibility based on admin email check
-  const emailLower = email.toLowerCase();
-  const isAdmin = emailLower === 'vvnair7333@gmail.com';
+  // Hide by default initially
   if (adminDashboardBtn) {
-    adminDashboardBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    adminDashboardBtn.style.display = 'none';
+  }
+
+  // Fetch profile to check role dynamically
+  try {
+    const response = await fetch(`${BASE_URL}/api/users/me`, {
+      method: 'GET',
+      headers: API_HEADERS
+    });
+    if (response.ok) {
+      const result = await response.json();
+      if (result && result.success && result.data) {
+        const role = result.data.role;
+        if (adminDashboardBtn) {
+          adminDashboardBtn.style.display = (role === 'ADMIN') ? 'inline-flex' : 'none';
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error);
+    // Fallback: If network fails, allow hardcoded vvnair7333@gmail.com to see it
+    const emailLower = email.toLowerCase();
+    const isAdmin = emailLower === 'vvnair7333@gmail.com';
+    if (adminDashboardBtn) {
+      adminDashboardBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    }
   }
 }
 

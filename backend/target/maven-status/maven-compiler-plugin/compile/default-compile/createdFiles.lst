@@ -9,6 +9,7 @@ com\tracker\entity\Entry$EntryBuilder.class
 com\tracker\controller\EntryController.class
 com\tracker\entity\User$UserBuilder.class
 com\tracker\dto\UserSummaryDTO.class
+com\tracker\controller\UserController.class
 com\tracker\controller\AdminController$RoleUpdateRequest.class
 com\tracker\dto\EntryRequestDTO$EntryRequestDTOBuilder.class
 com\tracker\service\UserService.class

@@ -1,4 +1,5 @@
 com\tracker\config\FakeAuthFilterTest.class
+com\tracker\controller\UserControllerTest.class
 com\tracker\controller\EntryControllerTest.class
 com\tracker\service\EntryServiceTest.class
 com\tracker\service\UserServiceTest.class
