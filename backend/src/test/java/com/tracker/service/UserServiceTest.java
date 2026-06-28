@@ -58,6 +58,19 @@ class UserServiceTest {
     }
 
     @Test
+    void getOrCreateUser_WhenUserExistsWithDifferentDisplayName_UpdatesDisplayName() {
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(employeeUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = userService.getOrCreateUser("test@example.com", "Updated Display Name");
+
+        assertNotNull(result);
+        assertEquals(userId, result.getId());
+        assertEquals("Updated Display Name", result.getDisplayName());
+        verify(userRepository, times(1)).save(employeeUser);
+    }
+
+    @Test
     void getOrCreateUser_WhenUserExistsButRoleNotAdminAndEmailMatchesAdminEmail_UpgradesAndReturnsUser() {
         User existingUserWithAdminEmail = User.builder()
                 .id(userId)
