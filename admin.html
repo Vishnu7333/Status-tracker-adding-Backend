@@ -6,6 +6,7 @@
   <title>Admin Dashboard - Module Status Tracker</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 </head>
 <body>
   <header>
@@ -74,9 +75,16 @@
     <section class="admin-section card">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
         <h2 style="margin: 0;">Date Wise Day Progress</h2>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <span style="font-weight: 600; font-size: 0.95rem; color: rgba(231, 236, 255, 0.8);">Select Date:</span>
-          <select id="admin-date-filter" style="width: auto; min-width: 160px; padding: 0.5rem 1rem; border-radius: 10px; background: #191c24; color: #fff; border: 1px solid #2d313c; cursor: pointer;"></select>
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-weight: 600; font-size: 0.95rem; color: rgba(231, 236, 255, 0.8);">From:</span>
+            <input type="date" id="admin-date-from" style="padding: 0.5rem 1rem; border-radius: 10px; background: #191c24; color: #fff; border: 1px solid #2d313c; cursor: pointer;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-weight: 600; font-size: 0.95rem; color: rgba(231, 236, 255, 0.8);">To:</span>
+            <input type="date" id="admin-date-to" style="padding: 0.5rem 1rem; border-radius: 10px; background: #191c24; color: #fff; border: 1px solid #2d313c; cursor: pointer;">
+          </div>
+          <button id="admin-download-date-wise" class="nav-btn" style="padding: 0.5rem 1.1rem; font-size: 0.88rem;">Download Excel 📥</button>
         </div>
       </div>
       <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Progress details tracked on the selected day.</p>
@@ -106,7 +114,10 @@
 
     <!-- Total Completion Section -->
     <section class="admin-section card" style="margin-top: 2rem;">
-      <h2>Total Completion Summary</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
+        <h2 style="margin: 0;">Total Completion Summary</h2>
+        <button id="admin-download-total-completion" class="nav-btn" style="padding: 0.5rem 1.1rem; font-size: 0.88rem;">Download Excel 📥</button>
+      </div>
       <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Cumulative status counts and completion progress aggregated for each project.</p>
       <div class="table-container" style="overflow-x: auto;">
         <table id="total-completion-table" style="width: 100%; border-collapse: collapse; text-align: left;">
