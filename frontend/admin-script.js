@@ -1181,6 +1181,27 @@ window.loadDashboardData = async function() {
   }
 };
 
+// Intercept updateUsersTableUI dynamically to ensure duplicate employees (same email, case-insensitive) are not rendered
+const originalUpdateUsersTableUI = window.updateUsersTableUI || updateUsersTableUI;
+window.updateUsersTableUI = function(users) {
+  if (!users) {
+    if (originalUpdateUsersTableUI) originalUpdateUsersTableUI(users);
+    return;
+  }
+  const uniqueUsers = [];
+  const seenEmails = new Set();
+  users.forEach(user => {
+    const emailKey = (user.email || '').toLowerCase().trim();
+    if (emailKey && !seenEmails.has(emailKey)) {
+      seenEmails.add(emailKey);
+      uniqueUsers.push(user);
+    } else if (!emailKey) {
+      uniqueUsers.push(user);
+    }
+  });
+  if (originalUpdateUsersTableUI) originalUpdateUsersTableUI(uniqueUsers);
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   window.loadDashboardData();
