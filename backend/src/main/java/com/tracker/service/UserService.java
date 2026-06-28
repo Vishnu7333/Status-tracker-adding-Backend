@@ -40,6 +40,10 @@ public class UserService {
                         entryRepository.saveAll(duplicateEntries);
                         entryRepository.flush();
                     }
+                    // Temporarily rename email to avoid unique constraint violations during Hibernate update flush
+                    duplicateUser.setEmail("deleted_" + java.util.UUID.randomUUID() + "_" + duplicateUser.getEmail());
+                    userRepository.saveAndFlush(duplicateUser);
+                    
                     userRepository.delete(duplicateUser);
                     userRepository.flush();
                 }
