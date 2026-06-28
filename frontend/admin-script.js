@@ -973,14 +973,28 @@ function downloadTotalCompletionExcel() {
     return;
   }
 
-  if (allEntries.length === 0) {
+  const fromSelect = document.getElementById('total-month-from');
+  const toSelect = document.getElementById('total-month-to');
+  const fromVal = fromSelect ? fromSelect.value : '';
+  const toVal = toSelect ? toSelect.value : '';
+
+  let filtered = allEntries;
+  if (fromVal && toVal) {
+    filtered = allEntries.filter(e => {
+      if (!e.entryDate) return false;
+      const ym = e.entryDate.substring(0, 7);
+      return ym >= fromVal && ym <= toVal;
+    });
+  }
+
+  if (filtered.length === 0) {
     alert("No data available to download.");
     return;
   }
 
   // Group by project name
   const groupings = {};
-  allEntries.forEach(entry => {
+  filtered.forEach(entry => {
     const project = entry.project || 'Untitled Project';
     if (!groupings[project]) {
       groupings[project] = {
@@ -1004,9 +1018,13 @@ function downloadTotalCompletionExcel() {
     g.functionalTeam += entry.functionalTeam || 0;
   });
 
+  const rangeStr = (fromVal && toVal) 
+    ? `${formatDateToDdMmmYyyy(fromVal + "-01")} to ${formatDateToDdMmmYyyy(toVal + "-01")}`
+    : 'All Time';
+
   const rows = [
     ["Total Completion Summary Report"],
-    [`Generated on: ${formatDateToDdMmmYyyy(getLocalTodayString())}`],
+    [`Range: ${rangeStr}`],
     [],
     ["Project", "Total Test Cases", "Passed", "Failed", "On Hold", "Pending", "N/A", "Taken care by functional team", "Completion Progress"]
   ];
@@ -1132,12 +1150,162 @@ function downloadTotalCompletionExcel() {
   XLSX.writeFile(workbook, "total-completion-summary.xlsx");
 }
 
+// Dynamic Month Filter options populator
+function updateMonthFilterOptions(entries) {
+  const fromSelect = document.getElementById('total-month-from');
+  const toSelect = document.getElementById('total-month-to');
+  if (!fromSelect || !toSelect) return;
+
+  // Extract unique Year-Month strings (YYYY-MM)
+  const months = [...new Set(entries.map(e => {
+    if (!e.entryDate) return '';
+    return e.entryDate.substring(0, 7); // "YYYY-MM"
+  }).filter(Boolean))].sort((a, b) => a.localeCompare(b)); // Sort ascending
+
+  const currentFrom = fromSelect.value;
+  const currentTo = toSelect.value;
+
+  fromSelect.innerHTML = '';
+  toSelect.innerHTML = '';
+
+  if (months.length === 0) {
+    const opt1 = document.createElement('option');
+    opt1.value = '';
+    opt1.textContent = 'No data';
+    fromSelect.appendChild(opt1);
+    const opt2 = document.createElement('option');
+    opt2.value = '';
+    opt2.textContent = 'No data';
+    toSelect.appendChild(opt2);
+    return;
+  }
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function formatYm(ymStr) {
+    const [y, m] = ymStr.split('-');
+    const mIdx = parseInt(m, 10) - 1;
+    return `${monthNames[mIdx]} ${y}`;
+  }
+
+  months.forEach(ym => {
+    const optF = document.createElement('option');
+    optF.value = ym;
+    optF.textContent = formatYm(ym);
+    fromSelect.appendChild(optF);
+
+    const optT = document.createElement('option');
+    optT.value = ym;
+    optT.textContent = formatYm(ym);
+    toSelect.appendChild(optT);
+  });
+
+  // Restore or set defaults (Earliest to Latest to show everything by default)
+  if (months.includes(currentFrom)) {
+    fromSelect.value = currentFrom;
+  } else {
+    fromSelect.value = months[0];
+  }
+
+  if (months.includes(currentTo)) {
+    toSelect.value = currentTo;
+  } else {
+    toSelect.value = months[months.length - 1];
+  }
+}
+
+// Render the Total Completion Summary table for the selected Month Range
+function renderTotalCompletionForMonthRange() {
+  const fromSelect = document.getElementById('total-month-from');
+  const toSelect = document.getElementById('total-month-to');
+  if (!fromSelect || !toSelect) return;
+
+  const fromVal = fromSelect.value;
+  const toVal = toSelect.value;
+
+  if (!fromVal || !toVal) return;
+
+  const filtered = allEntries.filter(e => {
+    if (!e.entryDate) return false;
+    const ym = e.entryDate.substring(0, 7);
+    return ym >= fromVal && ym <= toVal;
+  });
+
+  updateTotalCompletionTableUI(filtered);
+}
+
+// Render the Target Totals configuration mapping table
+function renderProjectTotalsMappingTable(entries) {
+  const tbody = document.querySelector('#project-totals-mapping-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No configuration data available.</td></tr>`;
+    return;
+  }
+
+  // Find the latest total count for each unique (project, module, submodule)
+  const mapping = {};
+  entries.forEach(e => {
+    const proj = e.project || 'Untitled Project';
+    const mod = e.module || 'N/A';
+    const sub = e.submodule || 'N/A';
+    const key = `${proj.toLowerCase()}||${mod.toLowerCase()}||${sub.toLowerCase()}`;
+
+    const entryDate = e.entryDate || '';
+    const current = mapping[key];
+    if (!current || entryDate.localeCompare(current.entryDate) > 0) {
+      mapping[key] = {
+        project: proj,
+        module: mod,
+        submodule: sub,
+        total: e.total || 0,
+        updatedBy: e.displayName || e.email || 'System',
+        entryDate: entryDate
+      };
+    }
+  });
+
+  const rows = Object.values(mapping);
+  // Sort by Project, then Module, then Submodule
+  rows.sort((a, b) => {
+    const compProj = a.project.localeCompare(b.project);
+    if (compProj !== 0) return compProj;
+    const compMod = a.module.localeCompare(b.module);
+    if (compMod !== 0) return compMod;
+    return a.submodule.localeCompare(b.submodule);
+  });
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No target totals configured yet.</td></tr>`;
+    return;
+  }
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #2d313c';
+    tr.style.height = '3.5rem';
+    tr.innerHTML = `
+      <td style="font-weight: 800; color: #38bdf8;">${escapeHtml(r.project)}</td>
+      <td style="color: #e2e8f0; font-weight: 600;">${escapeHtml(r.module)}</td>
+      <td style="color: rgba(231, 236, 255, 0.8);">${escapeHtml(r.submodule)}</td>
+      <td style="text-align: right; font-weight: 700; color: #4ade80;">${r.total}</td>
+      <td style="color: rgba(231, 236, 255, 0.7);">${escapeHtml(r.updatedBy)}</td>
+      <td style="text-align: right; color: rgba(231, 236, 255, 0.6); font-size: 0.9rem;">${formatDateToDdMmmYyyy(r.entryDate)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
 // Initialize the date inputs and setup custom logic
 function initDateRangeFilter() {
   const fromInput = document.getElementById('admin-date-from');
   const toInput = document.getElementById('admin-date-to');
   const downloadDateWiseBtn = document.getElementById('admin-download-date-wise');
   const downloadTotalBtn = document.getElementById('admin-download-total-completion');
+
+  const fromMonthSelect = document.getElementById('total-month-from');
+  const toMonthSelect = document.getElementById('total-month-to');
 
   if (!fromInput || !toInput) return;
 
@@ -1150,7 +1318,7 @@ function initDateRangeFilter() {
     toInput.value = todayStr;
   }
 
-  // Initial render
+  // Initial render for Date Range
   renderDailySummaryForDateRange(fromInput.value, toInput.value);
 
   // Event listeners for date inputs to filter dynamically
@@ -1161,6 +1329,12 @@ function initDateRangeFilter() {
     renderDailySummaryForDateRange(fromInput.value, toInput.value);
   });
 
+  // Event listeners for month selectors to filter dynamically
+  if (fromMonthSelect && toMonthSelect) {
+    fromMonthSelect.addEventListener('change', renderTotalCompletionForMonthRange);
+    toMonthSelect.addEventListener('change', renderTotalCompletionForMonthRange);
+  }
+
   // Excel downloads
   if (downloadDateWiseBtn) {
     downloadDateWiseBtn.addEventListener('click', downloadDateWiseExcel);
@@ -1170,15 +1344,24 @@ function initDateRangeFilter() {
   }
 }
 
-// Intercept loadDashboardData dynamically to refresh the range filtering table
+// Intercept loadDashboardData dynamically to refresh all custom tables
 const originalLoadDashboardData = window.loadDashboardData || loadDashboardData;
 window.loadDashboardData = async function() {
   await originalLoadDashboardData();
+  
+  // 1. Refresh Date Range Progress Table
   const fromInput = document.getElementById('admin-date-from');
   const toInput = document.getElementById('admin-date-to');
   if (fromInput && toInput) {
     renderDailySummaryForDateRange(fromInput.value, toInput.value);
   }
+
+  // 2. Populate Month Filter options and refresh Month-Filtered Total Completion Table
+  updateMonthFilterOptions(allEntries);
+  renderTotalCompletionForMonthRange();
+
+  // 3. Render Project Submodule Target Totals mapping table
+  renderProjectTotalsMappingTable(allEntries);
 };
 
 // Intercept updateUsersTableUI dynamically to ensure duplicate employees (same email, case-insensitive) are not rendered

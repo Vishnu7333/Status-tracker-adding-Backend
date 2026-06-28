@@ -1794,3 +1794,51 @@ function init() {
 }
 
 init();
+
+// Auto-populate Total Count from history records when project, module, and submodule are selected
+function autoPopulateTotalCount() {
+  const projInput = document.getElementById('project-name');
+  const modInput = document.getElementById('module-name');
+  const subInput = document.getElementById('submodule-name');
+  const totInput = document.getElementById('total-count-input');
+
+  if (!projInput || !modInput || !subInput || !totInput) return;
+
+  const proj = projInput.value.trim().toLowerCase();
+  const mod = modInput.value;
+  const sub = subInput.value;
+
+  if (!proj || !mod || !sub) return;
+
+  // Search historyRecords for matching (project, module, submodule)
+  // Take the most recent one
+  let bestMatch = null;
+  historyRecords.forEach(e => {
+    if (
+      e.project && e.project.trim().toLowerCase() === proj &&
+      e.module === mod &&
+      e.submodule === sub
+    ) {
+      if (!bestMatch || (e.entryDate && e.entryDate.localeCompare(bestMatch.entryDate) > 0)) {
+        bestMatch = e;
+      }
+    }
+  });
+
+  if (bestMatch && bestMatch.total !== undefined && bestMatch.total !== null) {
+    totInput.value = bestMatch.total;
+    // Trigger input event to update pending calculation
+    totInput.dispatchEvent(new Event('input'));
+  }
+}
+
+// Bind event listeners to auto-populate the total count
+document.addEventListener('DOMContentLoaded', () => {
+  const projInput = document.getElementById('project-name');
+  const modInput = document.getElementById('module-name');
+  const subInput = document.getElementById('submodule-name');
+
+  if (projInput) projInput.addEventListener('input', autoPopulateTotalCount);
+  if (modInput) modInput.addEventListener('change', autoPopulateTotalCount);
+  if (subInput) subInput.addEventListener('change', autoPopulateTotalCount);
+});
