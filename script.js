@@ -1642,6 +1642,10 @@ function checkUserSession() {
 function showLoginModal() {
   if (loginEmailInput) loginEmailInput.value = '';
   if (loginUsernameInput) loginUsernameInput.value = '';
+  const usernameLabel = loginUsernameInput ? loginUsernameInput.closest('label') : null;
+  if (usernameLabel) {
+    usernameLabel.style.display = 'block';
+  }
   if (loginModal) {
     loginModal.style.display = 'flex';
   }
@@ -1666,6 +1670,33 @@ function updateProfileUI(name, email) {
   }
 }
 
+function handleEmailInputForUsername() {
+  const email = loginEmailInput ? loginEmailInput.value.trim().toLowerCase() : '';
+  let emailToName = {};
+  try {
+    emailToName = JSON.parse(localStorage.getItem('emailToName') || '{}');
+  } catch (e) {}
+
+  const usernameLabel = loginUsernameInput ? loginUsernameInput.closest('label') : null;
+  if (email && emailToName[email]) {
+    if (loginUsernameInput) {
+      loginUsernameInput.value = emailToName[email];
+    }
+    if (usernameLabel) {
+      usernameLabel.style.display = 'none';
+    }
+  } else {
+    if (usernameLabel && usernameLabel.style.display === 'none') {
+      if (loginUsernameInput) {
+        loginUsernameInput.value = '';
+      }
+    }
+    if (usernameLabel) {
+      usernameLabel.style.display = 'block';
+    }
+  }
+}
+
 function handleLoginSubmit(event) {
   event.preventDefault();
   const email = loginEmailInput ? loginEmailInput.value.trim() : '';
@@ -1674,6 +1705,14 @@ function handleLoginSubmit(event) {
   
   localStorage.setItem('userEmail', email);
   localStorage.setItem('userName', username);
+  
+  // Save mapping of email -> username
+  let emailToName = {};
+  try {
+    emailToName = JSON.parse(localStorage.getItem('emailToName') || '{}');
+  } catch (e) {}
+  emailToName[email.toLowerCase()] = username;
+  localStorage.setItem('emailToName', JSON.stringify(emailToName));
   
   hideLoginModal();
   updateProfileUI(username, email);
@@ -1790,6 +1829,10 @@ function init() {
 
   if (loginForm) loginForm.addEventListener('submit', handleLoginSubmit);
   if (switchUserBtn) switchUserBtn.addEventListener('click', handleSwitchUser);
+  if (loginEmailInput) {
+    loginEmailInput.addEventListener('input', handleEmailInputForUsername);
+    loginEmailInput.addEventListener('change', handleEmailInputForUsername);
+  }
 
   checkUserSession();
   updateTable();
