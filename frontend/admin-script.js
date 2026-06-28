@@ -631,13 +631,558 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+// New helper function to get today's date in local YYYY-MM-DD
+function getLocalTodayString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Render Daily Summary table for a Date Range (inclusive)
+function renderDailySummaryForDateRange(fromDate, toDate) {
+  const tbody = document.querySelector('#daily-project-summary-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!fromDate || !toDate) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">Please select a valid date range.</td></tr>`;
+    return;
+  }
+
+  const filtered = allEntries.filter(e => e.entryDate >= fromDate && e.entryDate <= toDate);
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No entries found for the selected date range.</td></tr>`;
+    return;
+  }
+
+  // Group by project name
+  const groupings = {};
+  filtered.forEach(entry => {
+    const proj = entry.project || 'Untitled Project';
+    if (!groupings[proj]) {
+      groupings[proj] = {
+        project: proj,
+        total: 0,
+        pass: 0,
+        fail: 0,
+        onhold: 0,
+        pending: 0,
+        na: 0,
+        functionalTeam: 0
+      };
+    }
+    const g = groupings[proj];
+    g.total += entry.total || 0;
+    g.pass += entry.pass || 0;
+    g.fail += entry.fail || 0;
+    g.onhold += entry.onhold || 0;
+    g.pending += entry.pending || 0;
+    g.na += entry.na || 0;
+    g.functionalTeam += entry.functionalTeam || 0;
+  });
+
+  Object.values(groupings).forEach(g => {
+    const passRate = g.total > 0 ? (g.pass / g.total * 100) : 0;
+    let rateClass = 'rate-low';
+    if (passRate >= 80) rateClass = 'rate-high';
+    else if (passRate >= 50) rateClass = 'rate-med';
+
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #2d313c';
+    tr.style.height = '3.5rem';
+    tr.innerHTML = `
+      <td style="font-weight: 800; color: #38bdf8;">${escapeHtml(g.project)}</td>
+      <td style="text-align: right; font-weight: 700; color: #e2e8f0;">${g.total}</td>
+      <td style="text-align: right; color: #4ade80; font-weight: 600;">${g.pass}</td>
+      <td style="text-align: right; color: #f87171; font-weight: 600;">${g.fail}</td>
+      <td style="text-align: right; color: #f59e0b; font-weight: 600;">${g.onhold}</td>
+      <td style="text-align: right; color: #facc15; font-weight: 600;">${g.pending}</td>
+      <td style="text-align: right; color: #a78bfa; font-weight: 600;">${g.na}</td>
+      <td style="text-align: right; color: #f472b6; font-weight: 600;">${g.functionalTeam}</td>
+      <td style="text-align: right;">
+        <span class="rate-badge ${rateClass}">${passRate.toFixed(1)}%</span>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Download Excel for Date Wise Day Progress
+function downloadDateWiseExcel() {
+  const XLSX = window.XLSX;
+  if (!XLSX) {
+    alert("Excel library is not loaded.");
+    return;
+  }
+
+  const fromVal = document.getElementById('admin-date-from').value;
+  const toVal = document.getElementById('admin-date-to').value;
+  if (!fromVal || !toVal) {
+    alert("Please select a valid date range.");
+    return;
+  }
+
+  const filtered = allEntries.filter(e => e.entryDate >= fromVal && e.entryDate <= toVal);
+  if (filtered.length === 0) {
+    alert("No data available for the selected range.");
+    return;
+  }
+
+  // Group by project name (Summary sheet)
+  const groupings = {};
+  filtered.forEach(entry => {
+    const proj = entry.project || 'Untitled Project';
+    if (!groupings[proj]) {
+      groupings[proj] = {
+        project: proj,
+        total: 0,
+        pass: 0,
+        fail: 0,
+        onhold: 0,
+        pending: 0,
+        na: 0,
+        functionalTeam: 0
+      };
+    }
+    const g = groupings[proj];
+    g.total += entry.total || 0;
+    g.pass += entry.pass || 0;
+    g.fail += entry.fail || 0;
+    g.onhold += entry.onhold || 0;
+    g.pending += entry.pending || 0;
+    g.na += entry.na || 0;
+    g.functionalTeam += entry.functionalTeam || 0;
+  });
+
+  // Summary rows
+  const summaryRows = [
+    ["Date Wise Day Progress Summary"],
+    [`Range: ${formatDateToDdMmmYyyy(fromVal)} to ${formatDateToDdMmmYyyy(toVal)}`],
+    [],
+    ["Project", "Total Test Cases", "Passed", "Failed", "On Hold", "Pending", "N/A", "Taken care by functional team", "Pass Rate"]
+  ];
+
+  let totalSum = 0, passSum = 0, failSum = 0, onholdSum = 0, pendingSum = 0, naSum = 0, funcSum = 0;
+  Object.values(groupings).forEach(g => {
+    const passRate = g.total > 0 ? (g.pass / g.total * 100) : 0;
+    summaryRows.push([
+      g.project,
+      g.total,
+      g.pass,
+      g.fail,
+      g.onhold,
+      g.pending,
+      g.na,
+      g.functionalTeam,
+      `${passRate.toFixed(1)}%`
+    ]);
+    totalSum += g.total;
+    passSum += g.pass;
+    failSum += g.fail;
+    onholdSum += g.onhold;
+    pendingSum += g.pending;
+    naSum += g.na;
+    funcSum += g.functionalTeam;
+  });
+
+  // Grand Total row
+  const grandPassRate = totalSum > 0 ? (passSum / totalSum * 100) : 0;
+  summaryRows.push([]);
+  summaryRows.push([
+    "Grand Total",
+    totalSum,
+    passSum,
+    failSum,
+    onholdSum,
+    pendingSum,
+    naSum,
+    funcSum,
+    `${grandPassRate.toFixed(1)}%`
+  ]);
+
+  const workbook = XLSX.utils.book_new();
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+
+  // Detailed Entries sheet
+  const detailedRows = [
+    ["Date Wise Detailed Entries Log"],
+    [`Range: ${formatDateToDdMmmYyyy(fromVal)} to ${formatDateToDdMmmYyyy(toVal)}`],
+    [],
+    ["Date", "Project", "Module", "Submodule", "Total", "Passed", "Failed", "On Hold", "Pending", "N/A", "Functional Team", "Status", "Comments", "Entered By"]
+  ];
+
+  filtered.forEach(e => {
+    detailedRows.push([
+      formatDateToDdMmmYyyy(e.entryDate),
+      e.project || '',
+      e.module || '',
+      e.submodule || '',
+      e.total || 0,
+      e.pass || 0,
+      e.fail || 0,
+      e.onhold || 0,
+      e.pending || 0,
+      e.na || 0,
+      e.functionalTeam || 0,
+      e.status || 'Pending',
+      e.comments || '',
+      `${e.displayName || ''} (${e.email || ''})`
+    ]);
+  });
+  const detailedSheet = XLSX.utils.aoa_to_sheet(detailedRows);
+
+  // Apply beautiful styles using xlsx-js-style
+  const thinBorder = {
+    top: { style: 'thin', color: { rgb: '000000' } },
+    bottom: { style: 'thin', color: { rgb: '000000' } },
+    left: { style: 'thin', color: { rgb: '000000' } },
+    right: { style: 'thin', color: { rgb: '000000' } }
+  };
+
+  // Style Summary Sheet
+  const totalSummaryRows = summaryRows.length;
+  summarySheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }
+  ];
+  summarySheet['!cols'] = [
+    { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 28 }, { wch: 12 }
+  ];
+
+  // Header formatting (row index 3)
+  for (let col = 0; col < 9; col++) {
+    const cellRef = XLSX.utils.encode_cell({ r: 3, c: col });
+    if (summarySheet[cellRef]) {
+      summarySheet[cellRef].s = {
+        fill: { fgColor: { rgb: '1F4E78' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: thinBorder
+      };
+    }
+  }
+
+  // Title styling
+  if (summarySheet['A1']) {
+    summarySheet['A1'].s = {
+      font: { bold: true, sz: 14, color: { rgb: '1F4E78' } },
+      alignment: { horizontal: 'left', vertical: 'center' }
+    };
+  }
+  if (summarySheet['A2']) {
+    summarySheet['A2'].s = {
+      font: { italic: true, sz: 10, color: { rgb: '595959' } },
+      alignment: { horizontal: 'left', vertical: 'center' }
+    };
+  }
+
+  // Data and total rows
+  for (let r = 4; r < totalSummaryRows; r++) {
+    const isGrandTotal = r === (totalSummaryRows - 1);
+    if (isGrandTotal) {
+      for (let col = 0; col < 9; col++) {
+        const cellRef = XLSX.utils.encode_cell({ r: r, c: col });
+        if (!summarySheet[cellRef]) {
+          summarySheet[cellRef] = { t: 's', v: '' };
+        }
+        summarySheet[cellRef].s = {
+          fill: { fgColor: { rgb: 'FFF2CC' } },
+          font: { bold: true, sz: 11 },
+          border: thinBorder,
+          alignment: { horizontal: col === 0 ? 'left' : 'right', vertical: 'center' }
+        };
+      }
+    } else {
+      const rowVal = summaryRows[r];
+      if (rowVal && rowVal.length > 0) {
+        for (let col = 0; col < 9; col++) {
+          const cellRef = XLSX.utils.encode_cell({ r: r, c: col });
+          if (summarySheet[cellRef]) {
+            summarySheet[cellRef].s = {
+              border: thinBorder,
+              alignment: { horizontal: col === 0 ? 'left' : 'right', vertical: 'center' }
+            };
+          }
+        }
+      }
+    }
+  }
+
+  // Style Detailed Sheet
+  const totalDetailedRows = detailedRows.length;
+  detailedSheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } }
+  ];
+  detailedSheet['!cols'] = [
+    { wch: 15 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 18 }, { wch: 12 }, { wch: 25 }, { wch: 30 }
+  ];
+
+  // Title detailed
+  if (detailedSheet['A1']) {
+    detailedSheet['A1'].s = {
+      font: { bold: true, sz: 14, color: { rgb: '1F4E78' } },
+      alignment: { horizontal: 'left', vertical: 'center' }
+    };
+  }
+  if (detailedSheet['A2']) {
+    detailedSheet['A2'].s = {
+      font: { italic: true, sz: 10, color: { rgb: '595959' } },
+      alignment: { horizontal: 'left', vertical: 'center' }
+    };
+  }
+
+  // Header detailed (row index 3)
+  for (let col = 0; col < 14; col++) {
+    const cellRef = XLSX.utils.encode_cell({ r: 3, c: col });
+    if (detailedSheet[cellRef]) {
+      detailedSheet[cellRef].s = {
+        fill: { fgColor: { rgb: '1F4E78' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: thinBorder
+      };
+    }
+  }
+
+  // Data detailed
+  for (let r = 4; r < totalDetailedRows; r++) {
+    for (let col = 0; col < 14; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: r, c: col });
+      if (detailedSheet[cellRef]) {
+        detailedSheet[cellRef].s = {
+          border: thinBorder,
+          alignment: { horizontal: (col < 4 || col >= 11) ? 'left' : 'right', vertical: 'center' }
+        };
+      }
+    }
+  }
+
+  XLSX.utils.book_append_sheet(workbook, summarySheet, "Progress Summary");
+  XLSX.utils.book_append_sheet(workbook, detailedSheet, "Detailed Log");
+  XLSX.writeFile(workbook, `date-wise-progress-${fromVal}-to-${toVal}.xlsx`);
+}
+
+// Download Excel for Total Completion Summary
+function downloadTotalCompletionExcel() {
+  const XLSX = window.XLSX;
+  if (!XLSX) {
+    alert("Excel library is not loaded.");
+    return;
+  }
+
+  if (allEntries.length === 0) {
+    alert("No data available to download.");
+    return;
+  }
+
+  // Group by project name
+  const groupings = {};
+  allEntries.forEach(entry => {
+    const project = entry.project || 'Untitled Project';
+    if (!groupings[project]) {
+      groupings[project] = {
+        project: project,
+        total: 0,
+        pass: 0,
+        fail: 0,
+        onhold: 0,
+        pending: 0,
+        na: 0,
+        functionalTeam: 0
+      };
+    }
+    const g = groupings[project];
+    g.total += entry.total || 0;
+    g.pass += entry.pass || 0;
+    g.fail += entry.fail || 0;
+    g.onhold += entry.onhold || 0;
+    g.pending += entry.pending || 0;
+    g.na += entry.na || 0;
+    g.functionalTeam += entry.functionalTeam || 0;
+  });
+
+  const rows = [
+    ["Total Completion Summary Report"],
+    [`Generated on: ${formatDateToDdMmmYyyy(getLocalTodayString())}`],
+    [],
+    ["Project", "Total Test Cases", "Passed", "Failed", "On Hold", "Pending", "N/A", "Taken care by functional team", "Completion Progress"]
+  ];
+
+  let totalSum = 0, passSum = 0, failSum = 0, onholdSum = 0, pendingSum = 0, naSum = 0, funcSum = 0;
+  Object.values(groupings).forEach(g => {
+    const passRate = g.total > 0 ? (g.pass / g.total * 100) : 0;
+    rows.push([
+      g.project,
+      g.total,
+      g.pass,
+      g.fail,
+      g.onhold,
+      g.pending,
+      g.na,
+      g.functionalTeam,
+      `${passRate.toFixed(1)}%`
+    ]);
+    totalSum += g.total;
+    passSum += g.pass;
+    failSum += g.fail;
+    onholdSum += g.onhold;
+    pendingSum += g.pending;
+    naSum += g.na;
+    funcSum += g.functionalTeam;
+  });
+
+  // Grand Total row
+  const grandPassRate = totalSum > 0 ? (passSum / totalSum * 100) : 0;
+  rows.push([]);
+  rows.push([
+    "Grand Total",
+    totalSum,
+    passSum,
+    failSum,
+    onholdSum,
+    pendingSum,
+    naSum,
+    funcSum,
+    `${grandPassRate.toFixed(1)}%`
+  ]);
+
+  const workbook = XLSX.utils.book_new();
+  const sheet = XLSX.utils.aoa_to_sheet(rows);
+
+  // Apply styling
+  const thinBorder = {
+    top: { style: 'thin', color: { rgb: '000000' } },
+    bottom: { style: 'thin', color: { rgb: '000000' } },
+    left: { style: 'thin', color: { rgb: '000000' } },
+    right: { style: 'thin', color: { rgb: '000000' } }
+  };
+
+  const totalRows = rows.length;
+  sheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }
+  ];
+  sheet['!cols'] = [
+    { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 28 }, { wch: 20 }
+  ];
+
+  // Title styling
+  if (sheet['A1']) {
+    sheet['A1'].s = {
+      font: { bold: true, sz: 14, color: { rgb: '1F4E78' } },
+      alignment: { horizontal: 'left', vertical: 'center' }
+    };
+  }
+  if (sheet['A2']) {
+    sheet['A2'].s = {
+      font: { italic: true, sz: 10, color: { rgb: '595959' } },
+      alignment: { horizontal: 'left', vertical: 'center' }
+    };
+  }
+
+  // Header formatting (row index 3)
+  for (let col = 0; col < 9; col++) {
+    const cellRef = XLSX.utils.encode_cell({ r: 3, c: col });
+    if (sheet[cellRef]) {
+      sheet[cellRef].s = {
+        fill: { fgColor: { rgb: '1F4E78' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: thinBorder
+      };
+    }
+  }
+
+  // Data and total rows
+  for (let r = 4; r < totalRows; r++) {
+    const isGrandTotal = r === (totalRows - 1);
+    if (isGrandTotal) {
+      for (let col = 0; col < 9; col++) {
+        const cellRef = XLSX.utils.encode_cell({ r: r, c: col });
+        if (!sheet[cellRef]) {
+          sheet[cellRef] = { t: 's', v: '' };
+        }
+        sheet[cellRef].s = {
+          fill: { fgColor: { rgb: 'FFF2CC' } },
+          font: { bold: true, sz: 11 },
+          border: thinBorder,
+          alignment: { horizontal: col === 0 ? 'left' : 'right', vertical: 'center' }
+        };
+      }
+    } else {
+      const rowVal = rows[r];
+      if (rowVal && rowVal.length > 0) {
+        for (let col = 0; col < 9; col++) {
+          const cellRef = XLSX.utils.encode_cell({ r: r, c: col });
+          if (sheet[cellRef]) {
+            sheet[cellRef].s = {
+              border: thinBorder,
+              alignment: { horizontal: col === 0 ? 'left' : 'right', vertical: 'center' }
+            };
+          }
+        }
+      }
+    }
+  }
+
+  XLSX.utils.book_append_sheet(workbook, sheet, "Total Completion Summary");
+  XLSX.writeFile(workbook, "total-completion-summary.xlsx");
+}
+
+// Initialize the date inputs and setup custom logic
+function initDateRangeFilter() {
+  const fromInput = document.getElementById('admin-date-from');
+  const toInput = document.getElementById('admin-date-to');
+  const downloadDateWiseBtn = document.getElementById('admin-download-date-wise');
+  const downloadTotalBtn = document.getElementById('admin-download-total-completion');
+
+  if (!fromInput || !toInput) return;
+
+  // Default values to local current day (today)
+  const todayStr = getLocalTodayString();
+  if (!fromInput.value) {
+    fromInput.value = todayStr;
+  }
+  if (!toInput.value) {
+    toInput.value = todayStr;
+  }
+
+  // Initial render
+  renderDailySummaryForDateRange(fromInput.value, toInput.value);
+
+  // Event listeners for date inputs to filter dynamically
+  fromInput.addEventListener('change', () => {
+    renderDailySummaryForDateRange(fromInput.value, toInput.value);
+  });
+  toInput.addEventListener('change', () => {
+    renderDailySummaryForDateRange(fromInput.value, toInput.value);
+  });
+
+  // Excel downloads
+  if (downloadDateWiseBtn) {
+    downloadDateWiseBtn.addEventListener('click', downloadDateWiseExcel);
+  }
+  if (downloadTotalBtn) {
+    downloadTotalBtn.addEventListener('click', downloadTotalCompletionExcel);
+  }
+}
+
+// Intercept loadDashboardData dynamically to refresh the range filtering table
+const originalLoadDashboardData = window.loadDashboardData || loadDashboardData;
+window.loadDashboardData = async function() {
+  await originalLoadDashboardData();
+  const fromInput = document.getElementById('admin-date-from');
+  const toInput = document.getElementById('admin-date-to');
+  if (fromInput && toInput) {
+    renderDailySummaryForDateRange(fromInput.value, toInput.value);
+  }
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  loadDashboardData();
-  const select = document.getElementById('admin-date-filter');
-  if (select) {
-    select.addEventListener('change', (e) => {
-      renderDailySummaryForDate(e.target.value);
-    });
-  }
+  window.loadDashboardData();
+  initDateRangeFilter();
 });
