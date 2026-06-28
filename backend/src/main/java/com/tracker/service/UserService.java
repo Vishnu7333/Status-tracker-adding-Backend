@@ -4,6 +4,8 @@ import com.tracker.dto.UserResponseDTO;
 import com.tracker.entity.Role;
 import com.tracker.entity.User;
 import com.tracker.repository.UserRepository;
+import com.tracker.entity.Entry;
+import com.tracker.repository.EntryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,42 +19,59 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final EntryRepository entryRepository;
 
     @Transactional
     public User getOrCreateUser(String email, String displayName) {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
-        return userRepository.findByEmailIgnoreCase(normalizedEmail)
-                .map(user -> {
-                    boolean updated = false;
-                    if (displayName != null && !displayName.trim().isEmpty() && !displayName.equals(user.getDisplayName())) {
-                        user.setDisplayName(displayName);
-                        updated = true;
+        List<User> users = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        if (!users.isEmpty()) {
+            User user = users.get(0);
+            
+            // Clean up duplicates if any exist
+            if (users.size() > 1) {
+                for (int i = 1; i < users.size(); i++) {
+                    User duplicateUser = users.get(i);
+                    List<Entry> duplicateEntries = entryRepository.findByUserId(duplicateUser.getId());
+                    if (duplicateEntries != null && !duplicateEntries.isEmpty()) {
+                        for (Entry entry : duplicateEntries) {
+                            entry.setUser(user);
+                            entryRepository.save(entry);
+                        }
                     }
-                    if (!normalizedEmail.equals(user.getEmail())) {
-                        user.setEmail(normalizedEmail);
-                        updated = true;
-                    }
-                    if (normalizedEmail.equals("vvnair7333@gmail.com") && user.getRole() != Role.ADMIN) {
-                        user.setRole(Role.ADMIN);
-                        updated = true;
-                    }
-                    if (updated) {
-                        return userRepository.save(user);
-                    }
-                    return user;
-                })
-                .orElseGet(() -> {
-                    Role role = Role.EMPLOYEE;
-                    if (normalizedEmail.equals("vvnair7333@gmail.com")) {
-                        role = Role.ADMIN;
-                    }
-                    User newUser = User.builder()
-                            .email(normalizedEmail)
-                            .displayName(displayName)
-                            .role(role)
-                            .build();
-                    return userRepository.save(newUser);
-                });
+                    userRepository.delete(duplicateUser);
+                }
+            }
+            
+            boolean updated = false;
+            if (displayName != null && !displayName.trim().isEmpty() && !displayName.equals(user.getDisplayName())) {
+                user.setDisplayName(displayName);
+                updated = true;
+            }
+            if (!normalizedEmail.equals(user.getEmail())) {
+                user.setEmail(normalizedEmail);
+                updated = true;
+            }
+            if (normalizedEmail.equals("vvnair7333@gmail.com") && user.getRole() != Role.ADMIN) {
+                user.setRole(Role.ADMIN);
+                updated = true;
+            }
+            if (updated) {
+                return userRepository.save(user);
+            }
+            return user;
+        } else {
+            Role role = Role.EMPLOYEE;
+            if (normalizedEmail.equals("vvnair7333@gmail.com")) {
+                role = Role.ADMIN;
+            }
+            User newUser = User.builder()
+                    .email(normalizedEmail)
+                    .displayName(displayName)
+                    .role(role)
+                    .build();
+            return userRepository.save(newUser);
+        }
     }
 
     @Transactional(readOnly = true)

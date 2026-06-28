@@ -4,6 +4,7 @@ import com.tracker.dto.UserResponseDTO;
 import com.tracker.entity.Role;
 import com.tracker.entity.User;
 import com.tracker.repository.UserRepository;
+import com.tracker.repository.EntryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,6 +28,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private EntryRepository entryRepository;
 
     @InjectMocks
     private UserService userService;
@@ -47,7 +52,7 @@ class UserServiceTest {
 
     @Test
     void getOrCreateUser_WhenUserExists_ReturnsExistingUser() {
-        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(employeeUser));
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Collections.singletonList(employeeUser));
 
         User result = userService.getOrCreateUser("test@example.com", "Test User");
 
@@ -59,7 +64,7 @@ class UserServiceTest {
 
     @Test
     void getOrCreateUser_WhenUserExistsWithDifferentDisplayName_UpdatesDisplayName() {
-        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(employeeUser));
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Collections.singletonList(employeeUser));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = userService.getOrCreateUser("test@example.com", "Updated Display Name");
@@ -78,7 +83,7 @@ class UserServiceTest {
                 .displayName("Admin User")
                 .role(Role.EMPLOYEE)
                 .build();
-        when(userRepository.findByEmailIgnoreCase("vvnair7333@gmail.com")).thenReturn(Optional.of(existingUserWithAdminEmail));
+        when(userRepository.findByEmailIgnoreCase("vvnair7333@gmail.com")).thenReturn(Collections.singletonList(existingUserWithAdminEmail));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = userService.getOrCreateUser("vvnair7333@gmail.com", "Admin User");
@@ -90,7 +95,7 @@ class UserServiceTest {
 
     @Test
     void getOrCreateUser_WhenUserDoesNotExist_CreatesAndReturnsNewUser() {
-        when(userRepository.findByEmailIgnoreCase("new@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("new@example.com")).thenReturn(Collections.emptyList());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User u = invocation.getArgument(0);
             u.setId(UUID.randomUUID());
