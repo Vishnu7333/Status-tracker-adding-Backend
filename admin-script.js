@@ -1018,9 +1018,15 @@ function downloadTotalCompletionExcel() {
     g.functionalTeam += entry.functionalTeam || 0;
   });
 
-  const rangeStr = (fromVal && toVal) 
-    ? `${formatDateToDdMmmYyyy(fromVal + "-01")} to ${formatDateToDdMmmYyyy(toVal + "-01")}`
-    : 'All Time';
+  let rangeStr = 'All Time';
+  if (fromVal && toVal) {
+    const parts = toVal.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const lastDay = new Date(year, month, 0).getDate();
+    const toDay = String(lastDay).padStart(2, '0');
+    rangeStr = `${formatDateToDdMmmYyyy(fromVal + "-01")} to ${formatDateToDdMmmYyyy(toVal + "-" + toDay)}`;
+  }
 
   const rows = [
     ["Total Completion Summary Report"],
