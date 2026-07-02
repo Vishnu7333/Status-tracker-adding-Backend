@@ -1649,6 +1649,16 @@ function showLoginModal() {
   if (loginModal) {
     loginModal.style.display = 'flex';
   }
+
+  // Periodically check for browser autofill shortly after modal shows
+  let checkCount = 0;
+  const autofillInterval = setInterval(() => {
+    handleEmailInputForUsername();
+    checkCount++;
+    if (checkCount >= 10 || (loginModal && loginModal.style.display === 'none')) {
+      clearInterval(autofillInterval);
+    }
+  }, 300);
 }
 
 function hideLoginModal() {
@@ -1721,11 +1731,27 @@ function handleEmailInputForUsername() {
 function handleLoginSubmit(event) {
   event.preventDefault();
   const email = loginEmailInput ? loginEmailInput.value.trim() : '';
-  const username = loginUsernameInput ? loginUsernameInput.value.trim() : '';
+  let username = loginUsernameInput ? loginUsernameInput.value.trim() : '';
+  
+  // If username is empty but we have a saved mapping for the email, retrieve it
+  if (!username && email) {
+    let emailToName = {};
+    try {
+      emailToName = JSON.parse(localStorage.getItem('emailToName') || '{}');
+    } catch (e) {}
+    if (emailToName[email.toLowerCase()]) {
+      username = emailToName[email.toLowerCase()];
+      if (loginUsernameInput) {
+        loginUsernameInput.value = username;
+      }
+    }
+  }
+
   if (!email || !username) return;
   
   localStorage.setItem('userEmail', email);
   localStorage.setItem('userName', username);
+  localStorage.setItem('lastUserEmail', email);
   
   // Save mapping of email -> username
   let emailToName = {};
@@ -1853,6 +1879,8 @@ function init() {
   if (loginEmailInput) {
     loginEmailInput.addEventListener('input', handleEmailInputForUsername);
     loginEmailInput.addEventListener('change', handleEmailInputForUsername);
+    loginEmailInput.addEventListener('focus', handleEmailInputForUsername);
+    loginEmailInput.addEventListener('blur', handleEmailInputForUsername);
   }
 
   checkUserSession();
