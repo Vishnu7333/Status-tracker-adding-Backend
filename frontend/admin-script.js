@@ -427,8 +427,25 @@ function updateAdminProgressChart(entries) {
     dailyData[date].functionalTeam += entry.functionalTeam || 0;
   });
 
-  const sortedDates = Object.keys(dailyData).sort();
-  console.log('Sorted chart dates:', sortedDates);
+  let sortedDates = Object.keys(dailyData).sort();
+
+  // Show exactly the last 14 consecutive calendar days ending at the latest date
+  if (sortedDates.length > 0) {
+    const latestDateStr = sortedDates[sortedDates.length - 1];
+    const latestDate = new Date(latestDateStr);
+    const fourteenDays = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(latestDate);
+      d.setDate(latestDate.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      fourteenDays.push(`${yyyy}-${mm}-${dd}`);
+    }
+    sortedDates = fourteenDays;
+  }
+
+  console.log('Sorted chart dates (filtered 14 days):', sortedDates);
 
   const labels = sortedDates.map(dateStr => {
     try {
@@ -438,15 +455,16 @@ function updateAdminProgressChart(entries) {
     }
   });
 
-  const passPoints = sortedDates.map(d => dailyData[d].pass);
-  const failPoints = sortedDates.map(d => dailyData[d].fail);
-  const onholdPoints = sortedDates.map(d => dailyData[d].onhold);
-  const pendingPoints = sortedDates.map(d => dailyData[d].pending);
-  const naPoints = sortedDates.map(d => dailyData[d].na);
-  const functionalTeamPoints = sortedDates.map(d => dailyData[d].functionalTeam);
+  const passPoints = sortedDates.map(d => (dailyData[d] || { pass: 0 }).pass);
+  const failPoints = sortedDates.map(d => (dailyData[d] || { fail: 0 }).fail);
+  const onholdPoints = sortedDates.map(d => (dailyData[d] || { onhold: 0 }).onhold);
+  const pendingPoints = sortedDates.map(d => (dailyData[d] || { pending: 0 }).pending);
+  const naPoints = sortedDates.map(d => (dailyData[d] || { na: 0 }).na);
+  const functionalTeamPoints = sortedDates.map(d => (dailyData[d] || { functionalTeam: 0 }).functionalTeam);
   const passRatePoints = sortedDates.map(d => {
-    const total = dailyData[d].total;
-    return total > 0 ? parseFloat((dailyData[d].pass / total * 100).toFixed(1)) : 0;
+    const data = dailyData[d] || { total: 0, pass: 0 };
+    const total = data.total;
+    return total > 0 ? parseFloat((data.pass / total * 100).toFixed(1)) : 0;
   });
 
   if (adminProgressChart) {

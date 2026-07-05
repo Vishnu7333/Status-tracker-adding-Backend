@@ -829,7 +829,7 @@ function createImageReport() {
     Object.entries(groupByProjectAndModule(records)).forEach(([projectName, modules]) => {
       // 1. Project/Customer row
       const projectRow = document.createElement('tr');
-      projectRow.innerHTML = `<td colspan="11" style="background: #e2efda; color: #375623; font-weight: 800; padding: 0.7rem;">Customer: ${projectName}</td>`;
+      projectRow.innerHTML = `<td colspan="11" style="background: #d9e1f2; color: #1f4e79; font-weight: 800; padding: 0.7rem;">Customer: ${projectName}</td>`;
       tbody.appendChild(projectRow);
 
       // 2. Column Headers row
@@ -1019,8 +1019,8 @@ function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, p
   }
 
   if (isProjectHeaderRow) {
-    style.fill = { fgColor: { rgb: 'E2EFDA' } };
-    style.font = { bold: true, color: { rgb: '375623' }, sz: 13 };
+    style.fill = { fgColor: { rgb: 'D9E1F2' } };
+    style.font = { bold: true, color: { rgb: '1F4E79' }, sz: 13 };
     style.alignment.horizontal = 'left';
   }
 
@@ -1264,18 +1264,64 @@ function createHistoryRow(record) {
   return tr;
 }
 
+function populateHistoryMonthFilter() {
+  const filterSelect = document.getElementById('history-month-filter');
+  if (!filterSelect) return;
+
+  const prevSelected = filterSelect.value;
+  const monthsSet = new Set();
+  historyRecords.forEach(record => {
+    if (record.entryDate) {
+      const yyyymm = record.entryDate.substring(0, 7);
+      monthsSet.add(yyyymm);
+    }
+  });
+
+  const sortedMonths = Array.from(monthsSet).sort().reverse();
+
+  filterSelect.innerHTML = '<option value="all">All Months</option>';
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  sortedMonths.forEach(ym => {
+    const [year, monthStr] = ym.split('-');
+    const monthIdx = parseInt(monthStr, 10) - 1;
+    const label = `${monthNames[monthIdx]} ${year}`;
+    
+    const opt = document.createElement('option');
+    opt.value = ym;
+    opt.textContent = label;
+    filterSelect.appendChild(opt);
+  });
+
+  if (prevSelected && Array.from(filterSelect.options).some(o => o.value === prevSelected)) {
+    filterSelect.value = prevSelected;
+  } else {
+    filterSelect.value = 'all';
+  }
+}
+
 function updateHistoryTable() {
   if (!historyTableBody) return;
   historyTableBody.innerHTML = '';
 
-  if (!historyRecords.length) {
+  const filterSelect = document.getElementById('history-month-filter');
+  const selectedMonth = filterSelect ? filterSelect.value : 'all';
+
+  const recordsToRender = historyRecords.filter(record => {
+    if (selectedMonth === 'all') return true;
+    if (!record.entryDate) return false;
+    return record.entryDate.startsWith(selectedMonth);
+  });
+
+  if (!recordsToRender.length) {
     const emptyRow = document.createElement('tr');
-    emptyRow.innerHTML = '<td colspan="13" class="empty-state">No saved entries in the database history.</td>';
+    emptyRow.innerHTML = '<td colspan="13" class="empty-state">No saved entries match the selected filter.</td>';
     historyTableBody.appendChild(emptyRow);
     return;
   }
 
-  const grouped = groupByProjectAndModule(historyRecords);
+  const grouped = groupByProjectAndModule(recordsToRender);
   Object.entries(grouped).forEach(([projectName, modules]) => {
     const projectHeader = document.createElement('tr');
     projectHeader.className = 'project-header-row-ui';
@@ -1303,7 +1349,7 @@ function updateHistoryTable() {
       moduleHeader.innerHTML = `
         <td colspan="13">
           <strong>${moduleName}</strong>
-          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Taken care by functional team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
+          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na ?? 0} | Taken care by functional team: ${moduleSummary.functionalTeam ?? 0} | Status: ${status}</span>
         </td>
       `;
       historyTableBody.appendChild(moduleHeader);
@@ -1334,7 +1380,23 @@ function updateProgressChart() {
     dailyData[date].functionalTeam += record.functionalTeam || 0;
   });
 
-  const sortedDates = Object.keys(dailyData).sort();
+  let sortedDates = Object.keys(dailyData).sort();
+
+  // Show exactly the last 14 consecutive calendar days ending at the latest date
+  if (sortedDates.length > 0) {
+    const latestDateStr = sortedDates[sortedDates.length - 1];
+    const latestDate = new Date(latestDateStr);
+    const fourteenDays = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(latestDate);
+      d.setDate(latestDate.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      fourteenDays.push(`${yyyy}-${mm}-${dd}`);
+    }
+    sortedDates = fourteenDays;
+  }
 
   const labels = sortedDates.map(dateStr => {
     try {
@@ -1344,15 +1406,16 @@ function updateProgressChart() {
     }
   });
 
-  const passPoints = sortedDates.map(d => dailyData[d].pass);
-  const failPoints = sortedDates.map(d => dailyData[d].fail);
-  const onholdPoints = sortedDates.map(d => dailyData[d].onhold);
-  const pendingPoints = sortedDates.map(d => dailyData[d].pending);
-  const naPoints = sortedDates.map(d => dailyData[d].na);
-  const functionalTeamPoints = sortedDates.map(d => dailyData[d].functionalTeam);
+  const passPoints = sortedDates.map(d => (dailyData[d] || { pass: 0 }).pass);
+  const failPoints = sortedDates.map(d => (dailyData[d] || { fail: 0 }).fail);
+  const onholdPoints = sortedDates.map(d => (dailyData[d] || { onhold: 0 }).onhold);
+  const pendingPoints = sortedDates.map(d => (dailyData[d] || { pending: 0 }).pending);
+  const naPoints = sortedDates.map(d => (dailyData[d] || { na: 0 }).na);
+  const functionalTeamPoints = sortedDates.map(d => (dailyData[d] || { functionalTeam: 0 }).functionalTeam);
   const passRatePoints = sortedDates.map(d => {
-    const total = dailyData[d].total;
-    return total > 0 ? parseFloat((dailyData[d].pass / total * 100).toFixed(1)) : 0;
+    const data = dailyData[d] || { total: 0, pass: 0 };
+    const total = data.total;
+    return total > 0 ? parseFloat((data.pass / total * 100).toFixed(1)) : 0;
   });
 
   if (employeeChart) {
@@ -1595,6 +1658,7 @@ async function fetchMyHistory() {
     if (result && result.success && result.data) {
       historyRecords.length = 0;
       historyRecords.push(...result.data);
+      populateHistoryMonthFilter();
     } else {
       historyRecords.length = 0;
     }
@@ -1897,6 +1961,11 @@ function init() {
   const historyTable = document.getElementById('history-table');
   const historyTableBodyEl = historyTable ? historyTable.querySelector('tbody') : null;
   if (historyTableBodyEl) historyTableBodyEl.addEventListener('click', handleHistoryTableClick);
+
+  const historyMonthFilter = document.getElementById('history-month-filter');
+  if (historyMonthFilter) {
+    historyMonthFilter.addEventListener('change', updateHistoryTable);
+  }
 
   if (exportButton) exportButton.addEventListener('click', exportSummary);
   if (exportExcelButton) exportExcelButton.addEventListener('click', downloadExcel);
