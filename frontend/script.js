@@ -106,17 +106,32 @@ function validateIntegerOnly(input) {
   });
 }
 
+function updateCustomerDisplay() {
+  const projectName = projectNameInput ? projectNameInput.value.trim() : '';
+  const projectDisplayContainer = projectDisplay ? projectDisplay.closest('.project-display') : null;
+  if (projectName) {
+    if (projectDisplay) projectDisplay.textContent = projectName;
+    if (projectDisplayContainer) projectDisplayContainer.style.display = 'block';
+    document.title = `${projectName} - Module Status Tracker`;
+  } else {
+    if (projectDisplay) projectDisplay.textContent = '';
+    if (projectDisplayContainer) projectDisplayContainer.style.display = 'none';
+    document.title = 'Module Status Tracker';
+  }
+}
+
 const submodulesMap = {
   'FIN': ['General Ledger', 'Payables', 'Receivables', 'Fixed Assets', 'Cash Management', 'Expenses', 'Tax'],
   'HCM': ['Core HR', 'Payroll', 'Benefits', 'Talent Management', 'Learning', 'Workforce Management'],
   'SCM': ['Procurement', 'Inventory', 'Product Management', 'Manufacturing', 'Order Management', 'Logistics'],
   'WMS': ['Warehouse Operations', 'Inventory Tracking', 'Receiving', 'Shipping', 'Cycle Counting'],
-  'ORC': ['Recruiting', 'Candidate Experience', 'Job Requisitions', 'Offers', 'Onboarding integrations']
+  'ORC': ['Recruiting', 'Candidate Experience', 'Job Requisitions', 'Offers', 'Onboarding integrations'],
+  'EPM': ['FCCS', 'EPBCS (Planning)', 'ARCS', 'EDMCS', 'NRCS', 'PCMCS', 'TRCS']
 };
 
 function populateModules(selectedValue = '') {
   if (!moduleInput) return;
-  const standardModules = ['FIN', 'HCM', 'SCM', 'WMS', 'ORC'];
+  const standardModules = ['FIN', 'HCM', 'SCM', 'WMS', 'ORC', 'EPM'];
   
   const currentVal = selectedValue || moduleInput.value;
   moduleInput.innerHTML = '<option value="" disabled selected>Select Module</option>';
@@ -375,8 +390,8 @@ function createRow(record, index) {
     <td class="status-fail">${record.fail}</td>
     <td class="status-onhold">${record.onhold}</td>
     <td class="status-pending">${record.pending}</td>
-    <td class="status-na">${record.na || ''}</td>
-    <td class="status-functional">${record.functionalTeam || ''}</td>
+    <td class="status-na">${record.na ?? 0}</td>
+    <td class="status-functional">${record.functionalTeam ?? 0}</td>
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
@@ -853,7 +868,7 @@ function createImageReport() {
         moduleRow.className = 'image-report-module-row';
         const moduleCell = document.createElement('td');
         moduleCell.colSpan = 11;
-        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || ''} | Taken care by functional team: ${moduleSummary.functionalTeam || ''} | Status: ${getModuleStatus(moduleSummary)}`;
+        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na ?? 0} | Taken care by functional team: ${moduleSummary.functionalTeam ?? 0} | Status: ${getModuleStatus(moduleSummary)}`;
         moduleRow.appendChild(moduleCell);
         tbody.appendChild(moduleRow);
 
@@ -871,8 +886,8 @@ function createImageReport() {
             record.fail,
             record.onhold,
             record.pending,
-            record.na || '',
-            record.functionalTeam || '',
+            record.na ?? 0,
+            record.functionalTeam ?? 0,
             getStatus(record),
             record.comments || '-',
           ].forEach((value) => {
@@ -895,8 +910,8 @@ function createImageReport() {
       <td>${summary.fail}</td>
       <td>${summary.onhold}</td>
       <td>${summary.pending}</td>
-      <td>${summary.na || ''}</td>
-      <td>${summary.functionalTeam || ''}</td>
+      <td>${summary.na ?? 0}</td>
+      <td>${summary.functionalTeam ?? 0}</td>
       <td></td>
       <td></td>
     `;
@@ -1065,7 +1080,7 @@ async function downloadExcel() {
       Object.entries(moduleGroups).forEach(([moduleName, moduleRecords]) => {
         const moduleStartRow = summaryRows.length;
         moduleRecords.forEach((record) => {
-          summaryRows.push([moduleName, record.submodule, record.total, record.pass, record.fail, record.onhold, record.pending, record.na || '', record.functionalTeam || '', getStatus(record), record.comments || '-']);
+          summaryRows.push([moduleName, record.submodule, record.total, record.pass, record.fail, record.onhold, record.pending, record.na ?? 0, record.functionalTeam ?? 0, getStatus(record), record.comments || '-']);
         });
 
         if (moduleRecords.length > 1) {
@@ -1223,8 +1238,8 @@ function createHistoryRow(record) {
     <td class="status-fail">${record.fail}</td>
     <td class="status-onhold">${record.onhold}</td>
     <td class="status-pending">${record.pending}</td>
-    <td class="status-na">${record.na || ''}</td>
-    <td class="status-functional">${record.functionalTeam || ''}</td>
+    <td class="status-na">${record.na ?? 0}</td>
+    <td class="status-functional">${record.functionalTeam ?? 0}</td>
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
@@ -1635,8 +1650,8 @@ async function completeProcess() {
 
       if (projectNameInput) {
         projectNameInput.value = '';
-        if (projectDisplay) projectDisplay.textContent = 'Untitled Customer';
       }
+      updateCustomerDisplay();
       document.title = 'Module Status Tracker';
 
       await fetchMyHistory();
@@ -1850,7 +1865,7 @@ function handleSwitchUser() {
   if (naCountInput) naCountInput.value = '';
   if (functionalTeamCountInput) functionalTeamCountInput.value = '';
   if (commentInput) commentInput.value = '';
-  if (projectDisplay) projectDisplay.textContent = 'Untitled Customer';
+  updateCustomerDisplay();
   document.title = 'Module Status Tracker';
   clearAllFieldErrors();
   
@@ -1888,17 +1903,9 @@ function init() {
   if (exportImageButton) exportImageButton.addEventListener('click', downloadStatusImage);
 
   if (projectNameInput) {
-    projectNameInput.addEventListener('input', () => {
-      const projectName = projectNameInput.value.trim();
-      if (projectDisplay) {
-        projectDisplay.textContent = projectName || 'Untitled Customer';
-      }
-      document.title = projectName ? `${projectName} - Module Status Tracker` : 'Module Status Tracker';
-    });
-    if (projectDisplay) {
-      projectDisplay.textContent = projectNameInput.value.trim() || 'Untitled Customer';
-    }
+    projectNameInput.addEventListener('input', updateCustomerDisplay);
   }
+  updateCustomerDisplay();
   
   if (pendingCountInput) {
     pendingCountInput.readOnly = true;
