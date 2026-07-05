@@ -470,7 +470,7 @@ function createRow(record, index) {
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
       <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
-        <button class="edit-draft-button" data-index="${index}" title="Edit draft record" aria-label="Edit draft" style="background: none; border: none; padding: 0.35rem; cursor: pointer; color: #5871f5; display: inline-flex; align-items: center; justify-content: center; transition: opacity 0.2s;">
+        <button class="edit-draft-button retrieve-button" data-index="${index}" title="Edit draft record" aria-label="Edit draft">
           <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
             <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
           </svg>
@@ -510,7 +510,7 @@ function createProjectHeaderRow(projectName) {
   tr.className = 'project-header-row-ui';
   tr.innerHTML = `
     <td colspan="12">
-      <strong>Customer: ${projectName}</strong>
+      <strong style="color: #ffffff; font-weight: 800;">Customer: </strong><strong style="color: #38bdf8; font-weight: 800;">${projectName}</strong>
     </td>
   `;
   return tr;
@@ -617,6 +617,48 @@ async function parseTestcaseForm(event) {
       scrollToField(projectNameInput);
     }
     return;
+  }
+
+  let moduleName = moduleInput ? moduleInput.value : '';
+  let submoduleName = submoduleInput ? submoduleInput.value : '';
+
+  if (moduleName === 'Others') {
+    const customModuleInput = document.getElementById('custom-module-name');
+    const customSubmoduleInput = document.getElementById('custom-submodule-name');
+    const customModule = customModuleInput ? customModuleInput.value.trim() : '';
+    const customSubmodule = customSubmoduleInput ? customSubmoduleInput.value.trim() : '';
+    
+    let hasErr = false;
+    if (!customModule) {
+      if (customModuleInput) setFieldError(customModuleInput, 'Custom Module is required.');
+      hasErr = true;
+    }
+    if (!customSubmodule) {
+      if (customSubmoduleInput) setFieldError(customSubmoduleInput, 'Custom Submodule is required.');
+      hasErr = true;
+    }
+    if (hasErr) {
+      if (customModuleInput && !customModule) scrollToField(customModuleInput);
+      else if (customSubmoduleInput && !customSubmodule) scrollToField(customSubmoduleInput);
+      return;
+    }
+    moduleName = customModule;
+    submoduleName = customSubmodule;
+  } else {
+    let hasErr = false;
+    if (!moduleName) {
+      if (moduleInput) setFieldError(moduleInput, 'Module is required.');
+      hasErr = true;
+    }
+    if (!submoduleName) {
+      if (submoduleInput) setFieldError(submoduleInput, 'Submodule is required.');
+      hasErr = true;
+    }
+    if (hasErr) {
+      if (moduleInput && !moduleName) scrollToField(moduleInput);
+      else if (submoduleInput && !submoduleName) scrollToField(submoduleInput);
+      return;
+    }
   }
 
   const total = totalCountInput ? readOptionalCount(totalCountInput) : null;
@@ -778,8 +820,8 @@ async function parseTestcaseForm(event) {
 
   const record = {
     project: projectName,
-    module: moduleInput ? moduleInput.value.trim() : '',
-    submodule: submoduleInput ? submoduleInput.value.trim() : '',
+    module: moduleName,
+    submodule: submoduleName,
     total: values.total,
     pass: values.pass,
     fail: values.fail,
@@ -807,6 +849,12 @@ async function parseTestcaseForm(event) {
   } else {
     records.push(record);
   }
+
+  const userEmail = localStorage.getItem('userEmail');
+  if (userEmail) {
+    localStorage.setItem(`draftRecords_${userEmail}`, JSON.stringify(records));
+  }
+
   updateTable();
   updateDraftSummary();
 
@@ -815,6 +863,19 @@ async function parseTestcaseForm(event) {
     moduleInput.value = '';
     populateSubmodules('');
   }
+  const customContainer = document.getElementById('custom-module-container');
+  const customModuleInput = document.getElementById('custom-module-name');
+  const customSubmoduleInput = document.getElementById('custom-submodule-name');
+  if (customContainer) customContainer.style.display = 'none';
+  if (customModuleInput) {
+    customModuleInput.value = '';
+    customModuleInput.required = false;
+  }
+  if (customSubmoduleInput) {
+    customSubmoduleInput.value = '';
+    customSubmoduleInput.required = false;
+  }
+
   if (totalCountInput) totalCountInput.value = '';
   if (passCountInput) passCountInput.value = '';
   if (failCountInput) failCountInput.value = '';
@@ -1301,10 +1362,51 @@ function editDraftRecord(index) {
     projectNameInput.value = record.project || '';
     projectNameInput.dispatchEvent(new Event('input'));
   }
-  if (moduleInput) {
-    populateModules(record.module || '');
-    populateSubmodules(record.module || '', record.submodule || '');
+
+  const customContainer = document.getElementById('custom-module-container');
+  const customModuleInput = document.getElementById('custom-module-name');
+  const customSubmoduleInput = document.getElementById('custom-submodule-name');
+
+  if (record.module && !submodulesMap[record.module]) {
+    // Custom module!
+    if (moduleInput) {
+      moduleInput.value = 'Others';
+    }
+    if (customContainer) customContainer.style.display = 'flex';
+    if (customModuleInput) {
+      customModuleInput.value = record.module || '';
+      customModuleInput.required = true;
+    }
+    if (customSubmoduleInput) {
+      customSubmoduleInput.value = record.submodule || '';
+      customSubmoduleInput.required = true;
+    }
+    if (submoduleInput) {
+      submoduleInput.innerHTML = '<option value="" disabled selected>Select Submodule</option>';
+      submoduleInput.disabled = true;
+      submoduleInput.required = false;
+    }
+  } else {
+    // Standard module
+    if (moduleInput) {
+      moduleInput.value = record.module || '';
+    }
+    if (customContainer) customContainer.style.display = 'none';
+    if (customModuleInput) {
+      customModuleInput.value = '';
+      customModuleInput.required = false;
+    }
+    if (customSubmoduleInput) {
+      customSubmoduleInput.value = '';
+      customSubmoduleInput.required = false;
+    }
+    if (submoduleInput) {
+      submoduleInput.required = true;
+      populateModules(record.module || '');
+      populateSubmodules(record.module || '', record.submodule || '');
+    }
   }
+
   if (totalCountInput) totalCountInput.value = record.total !== undefined ? record.total : '';
   if (passCountInput) passCountInput.value = record.pass !== undefined ? record.pass : '';
   if (failCountInput) failCountInput.value = record.fail !== undefined ? record.fail : '';
@@ -1322,6 +1424,10 @@ function editDraftRecord(index) {
   }
 
   records.splice(index, 1);
+  const userEmail = localStorage.getItem('userEmail');
+  if (userEmail) {
+    localStorage.setItem(`draftRecords_${userEmail}`, JSON.stringify(records));
+  }
   updateTable();
   updateDraftSummary();
 }
@@ -1334,6 +1440,10 @@ function handleDraftTableClick(event) {
     const index = parseInt(removeBtn.dataset.index, 10);
     if (!isNaN(index) && index >= 0 && index < records.length) {
       records.splice(index, 1);
+      const userEmail = localStorage.getItem('userEmail');
+      if (userEmail) {
+        localStorage.setItem(`draftRecords_${userEmail}`, JSON.stringify(records));
+      }
       updateTable();
       updateDraftSummary();
     }
@@ -1446,7 +1556,7 @@ function updateHistoryTable() {
   Object.entries(grouped).forEach(([projectName, modules]) => {
     const projectHeader = document.createElement('tr');
     projectHeader.className = 'project-header-row-ui';
-    projectHeader.innerHTML = `<td colspan="13"><strong>Customer: ${projectName}</strong></td>`;
+    projectHeader.innerHTML = `<td colspan="13"><strong style="color: #ffffff; font-weight: 800;">Customer: </strong><strong style="color: #38bdf8; font-weight: 800;">${projectName}</strong></td>`;
     historyTableBody.appendChild(projectHeader);
 
     Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
@@ -1739,10 +1849,51 @@ function retrieveHistoryRecord(id) {
     projectNameInput.value = record.project || '';
     projectNameInput.dispatchEvent(new Event('input'));
   }
-  if (moduleInput) {
-    populateModules(record.module || '');
-    populateSubmodules(record.module || '', record.submodule || '');
+
+  const customContainer = document.getElementById('custom-module-container');
+  const customModuleInput = document.getElementById('custom-module-name');
+  const customSubmoduleInput = document.getElementById('custom-submodule-name');
+
+  if (record.module && !submodulesMap[record.module]) {
+    // Custom module!
+    if (moduleInput) {
+      moduleInput.value = 'Others';
+    }
+    if (customContainer) customContainer.style.display = 'flex';
+    if (customModuleInput) {
+      customModuleInput.value = record.module || '';
+      customModuleInput.required = true;
+    }
+    if (customSubmoduleInput) {
+      customSubmoduleInput.value = record.submodule || '';
+      customSubmoduleInput.required = true;
+    }
+    if (submoduleInput) {
+      submoduleInput.innerHTML = '<option value="" disabled selected>Select Submodule</option>';
+      submoduleInput.disabled = true;
+      submoduleInput.required = false;
+    }
+  } else {
+    // Standard module
+    if (moduleInput) {
+      moduleInput.value = record.module || '';
+    }
+    if (customContainer) customContainer.style.display = 'none';
+    if (customModuleInput) {
+      customModuleInput.value = '';
+      customModuleInput.required = false;
+    }
+    if (customSubmoduleInput) {
+      customSubmoduleInput.value = '';
+      customSubmoduleInput.required = false;
+    }
+    if (submoduleInput) {
+      submoduleInput.required = true;
+      populateModules(record.module || '');
+      populateSubmodules(record.module || '', record.submodule || '');
+    }
   }
+
   if (totalCountInput) totalCountInput.value = record.total !== undefined ? record.total : '';
   if (passCountInput) passCountInput.value = record.pass !== undefined ? record.pass : '';
   if (failCountInput) failCountInput.value = record.fail !== undefined ? record.fail : '';
@@ -1837,8 +1988,26 @@ async function completeProcess() {
       if (projectNameInput) {
         projectNameInput.value = '';
       }
+      const customContainer = document.getElementById('custom-module-container');
+      const customModuleInput = document.getElementById('custom-module-name');
+      const customSubmoduleInput = document.getElementById('custom-submodule-name');
+      if (customContainer) customContainer.style.display = 'none';
+      if (customModuleInput) {
+        customModuleInput.value = '';
+        customModuleInput.required = false;
+      }
+      if (customSubmoduleInput) {
+        customSubmoduleInput.value = '';
+        customSubmoduleInput.required = false;
+      }
+
       updateCustomerDisplay();
       document.title = 'Module Status Tracker';
+
+      const userEmail = localStorage.getItem('userEmail');
+      if (userEmail) {
+        localStorage.removeItem(`draftRecords_${userEmail}`);
+      }
 
       await fetchMyHistory();
 
@@ -1889,6 +2058,18 @@ function checkUserSession() {
   } else {
     hideLoginModal();
     updateProfileUI(name, email);
+    
+    // Load saved draft from localStorage
+    const savedDraft = localStorage.getItem(`draftRecords_${email}`);
+    if (savedDraft) {
+      try {
+        records.length = 0;
+        records.push(...JSON.parse(savedDraft));
+      } catch (e) {
+        console.error('Error parsing saved draft:', e);
+      }
+    }
+    
     fetchMyHistory();
   }
 }
@@ -2043,6 +2224,18 @@ function handleSwitchUser() {
     moduleInput.value = '';
     populateSubmodules('');
   }
+  const customContainer = document.getElementById('custom-module-container');
+  const customModuleInput = document.getElementById('custom-module-name');
+  const customSubmoduleInput = document.getElementById('custom-submodule-name');
+  if (customContainer) customContainer.style.display = 'none';
+  if (customModuleInput) {
+    customModuleInput.value = '';
+    customModuleInput.required = false;
+  }
+  if (customSubmoduleInput) {
+    customSubmoduleInput.value = '';
+    customSubmoduleInput.required = false;
+  }
   if (totalCountInput) totalCountInput.value = '';
   if (passCountInput) passCountInput.value = '';
   if (failCountInput) failCountInput.value = '';
@@ -2067,10 +2260,43 @@ function init() {
   populateModules('');
   populateSubmodules('');
   if (moduleInput) {
-    console.log('Registered change event listener on moduleInput');
     moduleInput.addEventListener('change', () => {
-      console.log('moduleInput changed event fired. New value:', moduleInput.value);
-      populateSubmodules(moduleInput.value);
+      const isOthers = moduleInput.value === 'Others';
+      const customContainer = document.getElementById('custom-module-container');
+      const customModuleInput = document.getElementById('custom-module-name');
+      const customSubmoduleInput = document.getElementById('custom-submodule-name');
+      
+      if (isOthers) {
+        if (customContainer) customContainer.style.display = 'flex';
+        if (customModuleInput) {
+          customModuleInput.required = true;
+          customModuleInput.value = '';
+        }
+        if (customSubmoduleInput) {
+          customSubmoduleInput.required = true;
+          customSubmoduleInput.value = '';
+        }
+        if (submoduleInput) {
+          submoduleInput.required = false;
+          submoduleInput.disabled = true;
+          submoduleInput.innerHTML = '<option value="" disabled selected>Select Submodule</option>';
+        }
+      } else {
+        if (customContainer) customContainer.style.display = 'none';
+        if (customModuleInput) {
+          customModuleInput.required = false;
+          customModuleInput.value = '';
+        }
+        if (customSubmoduleInput) {
+          customSubmoduleInput.required = false;
+          customSubmoduleInput.value = '';
+        }
+        if (submoduleInput) {
+          submoduleInput.required = true;
+          submoduleInput.disabled = false;
+        }
+        populateSubmodules(moduleInput.value);
+      }
     });
   }
 
