@@ -136,10 +136,7 @@ function populateModules(selectedValue = '') {
   const currentVal = selectedValue || moduleInput.value;
   moduleInput.innerHTML = '<option value="" disabled selected>Select Module</option>';
   
-  const modulesList = [...standardModules];
-  if (currentVal && !modulesList.includes(currentVal)) {
-    modulesList.push(currentVal);
-  }
+  const modulesList = [...standardModules, 'Others'];
   
   modulesList.forEach(mod => {
     const opt = document.createElement('option');
@@ -149,7 +146,11 @@ function populateModules(selectedValue = '') {
   });
   
   if (currentVal) {
-    moduleInput.value = currentVal;
+    if (modulesList.includes(currentVal)) {
+      moduleInput.value = currentVal;
+    } else {
+      moduleInput.value = 'Others';
+    }
   }
 }
 

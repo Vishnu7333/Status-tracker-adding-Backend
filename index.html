@@ -18,7 +18,7 @@
         <a href="admin.html" id="admin-dashboard-btn" class="nav-btn admin-btn" style="display: none;">Admin Dashboard 🛡️</a>
       </div>
       <label class="project-name-field">
-        Customer Name <span style="color: #f87171;">*</span>
+        <span>Customer Name <span style="color: #f87171;">*</span></span>
         <input id="project-name" type="text" pattern="^(?=.*[A-Za-z])[A-Za-z .-]+$" 
           placeholder="Enter customer name" title="Must contain at least one letter. Only letters, spaces, dots, and hyphens allowed" required />
         <span class="field-error" id="project-name-error" aria-live="polite"></span>
@@ -35,7 +35,7 @@
         <h2>Add Submodule Total</h2>
         <form id="testcase-form">
           <label>
-            Module <span style="color: #f87171;">*</span>
+            <span>Module <span style="color: #f87171;">*</span></span>
             <select id="module-name" required>
               <option value="" disabled selected>Select Module</option>
               <option value="FIN">FIN</option>
@@ -49,7 +49,7 @@
             <span class="field-error" id="module-name-error" aria-live="polite"></span>
           </label>
           <label>
-            Submodule <span style="color: #f87171;">*</span>
+            <span>Submodule <span style="color: #f87171;">*</span></span>
             <select id="submodule-name" required disabled>
               <option value="" disabled selected>Select Submodule</option>
             </select>
@@ -58,19 +58,19 @@
           
           <div id="custom-module-container" style="display: none; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; width: 100%;">
             <label>
-              Custom Module <span style="color: #f87171;">*</span>
+              <span>Custom Module <span style="color: #f87171;">*</span></span>
               <input id="custom-module-name" type="text" placeholder="Enter custom module" />
               <span class="field-error" id="custom-module-name-error" aria-live="polite"></span>
             </label>
             <label>
-              Custom Submodule <span style="color: #f87171;">*</span>
+              <span>Custom Submodule <span style="color: #f87171;">*</span></span>
               <input id="custom-submodule-name" type="text" placeholder="Enter custom submodule" />
               <span class="field-error" id="custom-submodule-name-error" aria-live="polite"></span>
             </label>
           </div>
 
           <label>
-            Total sub module count <span style="color: #f87171;">*</span>
+            <span>Total sub module count <span style="color: #f87171;">*</span></span>
             <input id="total-count-input" type="number" min="0" step="1" placeholder="Enter total sub module count" />
             <span class="field-error" id="total-count-input-error" aria-live="polite"></span>
           </label>
