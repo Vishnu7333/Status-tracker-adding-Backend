@@ -1161,12 +1161,13 @@ function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, p
   const isGrandTotalRow = rowIndex === grandTotalRowIndex;
   const isProjectHeaderRow = projectHeaderRows && projectHeaderRows.has(rowIndex);
   const isCommentsColumn = columnIndex === 10;
+  const shouldWrap = isCommentsColumn || columnIndex === 1 || columnIndex === 8;
 
   const style = {
     alignment: {
       horizontal: 'center',
       vertical: 'center',
-      wrapText: isCommentsColumn,
+      wrapText: shouldWrap,
     },
     border: thinBorder,
   };
@@ -1290,7 +1291,7 @@ async function downloadExcel() {
     summarySheet['!rows'][1] = { hpt: 8 };
 
     headerRows.forEach((rowIdx) => {
-      summarySheet['!rows'][rowIdx] = { hpt: 23 };
+      summarySheet['!rows'][rowIdx] = { hpt: 35 };
     });
 
     const thinBorder = {
