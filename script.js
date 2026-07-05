@@ -1791,7 +1791,6 @@ async function fetchMyHistory() {
   }
   updateHistoryTable();
 }
-}
 
 async function completeProcess() {
   if (records.length === 0) {
