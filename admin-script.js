@@ -26,6 +26,29 @@ function getEntryDateString(recordOrEntry) {
   return String(dateVal);
 }
 
+function downloadCanvasAsImage(canvasId, fileName) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tempCtx = tempCanvas.getContext('2d');
+
+  tempCtx.fillStyle = '#191c24';
+  tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+  tempCtx.drawImage(canvas, 0, 0);
+
+  const imageURI = tempCanvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = imageURI;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 function formatDateToDdMmmYyyy(dateInput) {
   if (!dateInput) return '';
   const date = new Date(dateInput);
@@ -420,7 +443,45 @@ function updateTotalCompletionTableUI(entries) {
   });
 }
 
-function updateAdminProgressChart(entries) {
+function populateAdminChartMonthFilter(entries) {
+  const filterSelect = document.getElementById('admin-chart-month-filter');
+  if (!filterSelect) return;
+
+  const prevSelected = filterSelect.value;
+  const monthsSet = new Set();
+  entries.forEach(e => {
+    const dateStr = getEntryDateString(e);
+    if (dateStr) {
+      const yyyymm = dateStr.substring(0, 7);
+      monthsSet.add(yyyymm);
+    }
+  });
+
+  const sortedMonths = Array.from(monthsSet).sort().reverse();
+
+  filterSelect.innerHTML = '<option value="all">All Months</option>';
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  sortedMonths.forEach(ym => {
+    const [year, monthStr] = ym.split('-');
+    const monthIdx = parseInt(monthStr, 10) - 1;
+    const label = `${monthNames[monthIdx]} ${year}`;
+    
+    const opt = document.createElement('option');
+    opt.value = ym;
+    opt.textContent = label;
+    filterSelect.appendChild(opt);
+  });
+
+  if (prevSelected && Array.from(filterSelect.options).some(o => o.value === prevSelected)) {
+    filterSelect.value = prevSelected;
+  } else {
+    filterSelect.value = 'all';
+  }
+}
+
+function updateAdminProgressChart(entries = allEntries) {
   console.log('updateAdminProgressChart called with entries:', entries);
   const chartCanvas = document.getElementById('admin-progress-chart');
   if (!chartCanvas) {
@@ -428,8 +489,18 @@ function updateAdminProgressChart(entries) {
     return;
   }
 
+  const filterSelect = document.getElementById('admin-chart-month-filter');
+  const selectedMonth = filterSelect ? filterSelect.value : 'all';
+
+  const filteredEntries = entries.filter(e => {
+    if (selectedMonth === 'all') return true;
+    const dateStr = getEntryDateString(e);
+    if (!dateStr) return false;
+    return dateStr.startsWith(selectedMonth);
+  });
+
   const dailyData = {};
-  entries.forEach(entry => {
+  filteredEntries.forEach(entry => {
     const date = getEntryDateString(entry);
     if (!date) return;
     if (!dailyData[date]) {
@@ -504,8 +575,8 @@ function updateAdminProgressChart(entries) {
           type: 'line',
           label: 'Pass Rate (%)',
           data: passRatePoints,
-          borderColor: '#4ade80',
-          backgroundColor: 'rgba(74, 222, 128, 0.15)',
+          borderColor: '#88d49e',
+          backgroundColor: 'rgba(136, 212, 158, 0.12)',
           borderWidth: 3,
           tension: 0.35,
           pointRadius: 4,
@@ -516,8 +587,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'Passed',
           data: passPoints,
-          backgroundColor: 'rgba(74, 222, 128, 0.85)',
-          borderColor: 'rgba(74, 222, 128, 1)',
+          backgroundColor: 'rgba(110, 168, 130, 0.7)',
+          borderColor: 'rgba(110, 168, 130, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -525,8 +596,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'Failed',
           data: failPoints,
-          backgroundColor: 'rgba(248, 113, 113, 0.85)',
-          borderColor: 'rgba(248, 113, 113, 1)',
+          backgroundColor: 'rgba(214, 122, 122, 0.7)',
+          borderColor: 'rgba(214, 122, 122, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -534,8 +605,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'On Hold',
           data: onholdPoints,
-          backgroundColor: 'rgba(245, 158, 11, 0.85)',
-          borderColor: 'rgba(245, 158, 11, 1)',
+          backgroundColor: 'rgba(224, 168, 95, 0.7)',
+          borderColor: 'rgba(224, 168, 95, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -543,8 +614,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'Pending',
           data: pendingPoints,
-          backgroundColor: 'rgba(250, 204, 21, 0.85)',
-          borderColor: 'rgba(250, 204, 21, 1)',
+          backgroundColor: 'rgba(220, 206, 130, 0.7)',
+          borderColor: 'rgba(220, 206, 130, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -552,8 +623,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'N/A',
           data: naPoints,
-          backgroundColor: 'rgba(167, 139, 250, 0.85)',
-          borderColor: 'rgba(167, 139, 250, 1)',
+          backgroundColor: 'rgba(148, 160, 202, 0.7)',
+          borderColor: 'rgba(148, 160, 202, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -561,8 +632,8 @@ function updateAdminProgressChart(entries) {
         {
           label: 'Functional Team',
           data: functionalTeamPoints,
-          backgroundColor: 'rgba(244, 114, 182, 0.85)',
-          borderColor: 'rgba(244, 114, 182, 1)',
+          backgroundColor: 'rgba(202, 148, 172, 0.7)',
+          borderColor: 'rgba(202, 148, 172, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -630,7 +701,7 @@ function updateAdminProgressChart(entries) {
           max: 100,
           grid: { drawOnChartArea: false },
           ticks: {
-            color: '#4ade80',
+            color: '#88d49e',
             font: { family: 'Inter, sans-serif' },
             callback: function(value) {
               return value + '%';
@@ -639,7 +710,7 @@ function updateAdminProgressChart(entries) {
           title: {
             display: true,
             text: 'Pass Rate (%)',
-            color: '#4ade80',
+            color: '#88d49e',
             font: { family: 'Inter, sans-serif', weight: 'bold' }
           }
         }
@@ -1415,6 +1486,20 @@ function initDateRangeFilter() {
   if (downloadTotalBtn) {
     downloadTotalBtn.addEventListener('click', downloadTotalCompletionExcel);
   }
+
+  const adminChartMonthFilter = document.getElementById('admin-chart-month-filter');
+  if (adminChartMonthFilter) {
+    adminChartMonthFilter.addEventListener('change', () => {
+      updateAdminProgressChart(allEntries);
+    });
+  }
+
+  const downloadAdminChartBtn = document.getElementById('download-admin-chart');
+  if (downloadAdminChartBtn) {
+    downloadAdminChartBtn.addEventListener('click', () => {
+      downloadCanvasAsImage('admin-progress-chart', 'admin-progress-chart.png');
+    });
+  }
 }
 
 // Intercept loadDashboardData dynamically to refresh all custom tables
@@ -1435,6 +1520,10 @@ window.loadDashboardData = async function() {
 
   // 3. Render Project Submodule Target Totals mapping table
   renderProjectTotalsMappingTable(allEntries);
+
+  // 4. Populate Admin Chart month filter and refresh admin chart
+  populateAdminChartMonthFilter(allEntries);
+  updateAdminProgressChart(allEntries);
 };
 
 // Intercept updateUsersTableUI dynamically to ensure duplicate employees (same email, case-insensitive) are not rendered
