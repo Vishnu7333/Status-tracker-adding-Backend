@@ -57,7 +57,12 @@ public class EntryService {
         Entry entryToSave;
         if (existingEntryOpt.isPresent()) {
             Entry existing = existingEntryOpt.get();
-            if (passVal < existing.getPass()) {
+            LocalDate targetDate = dto.getEntryDate() != null ? dto.getEntryDate() : LocalDate.now();
+            boolean isNewMonth = existing.getEntryDate() == null || 
+                                 existing.getEntryDate().getYear() != targetDate.getYear() ||
+                                 existing.getEntryDate().getMonthValue() != targetDate.getMonthValue();
+
+            if (!isNewMonth && passVal < existing.getPass()) {
                 throw new RuntimeException("Pass count cannot be less than the previously saved count (" + existing.getPass() + ").");
             }
 

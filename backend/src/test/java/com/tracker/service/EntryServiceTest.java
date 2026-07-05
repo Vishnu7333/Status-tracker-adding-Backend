@@ -226,6 +226,33 @@ class EntryServiceTest {
     }
 
     @Test
+    void upsertEntry_WhenPassCountDecreasedInDifferentMonth_AllowsReset() {
+        existingEntry.setEntryDate(LocalDate.now().minusMonths(1));
+        int expectedPass = existingEntry.getPass() - 1;
+
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2")))
+                .thenReturn(Optional.of(existingEntry));
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        EntryRequestDTO updateDTO = EntryRequestDTO.builder()
+                .project("Project Alpha")
+                .module("Authentication")
+                .submodule("OAuth2")
+                .total(10)
+                .pass(expectedPass)
+                .fail(1)
+                .onhold(0)
+                .pending(8)
+                .entryDate(LocalDate.now())
+                .build();
+
+        assertDoesNotThrow(() -> {
+            EntryResponseDTO response = entryService.upsertEntry(user, updateDTO);
+            assertEquals(expectedPass, response.getPass());
+        });
+    }
+
+    @Test
     void getEntriesForUser_ReturnsOrderedEntries() {
         Entry older = Entry.builder().entryDate(LocalDate.now().minusDays(1)).user(user).build();
         Entry newer = Entry.builder().entryDate(LocalDate.now()).user(user).build();
