@@ -294,6 +294,9 @@ function getExistingPassCount() {
   const sub = submoduleInput ? submoduleInput.value.trim() : '';
   if (!proj || !mod || !sub) return 0;
 
+  const today = new Date();
+  const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
   // Check local draft records first
   const draftExisting = records.find(r => 
     r.project.toLowerCase() === proj.toLowerCase() && 
@@ -301,7 +304,11 @@ function getExistingPassCount() {
     r.submodule.toLowerCase() === sub.toLowerCase()
   );
   if (draftExisting) {
-    return draftExisting.pass || 0;
+    const dateStr = getEntryDateString(draftExisting);
+    if (dateStr && dateStr.startsWith(currentYearMonth)) {
+      return draftExisting.pass || 0;
+    }
+    return 0;
   }
 
   // Check saved history records
@@ -310,7 +317,15 @@ function getExistingPassCount() {
     r.module.toLowerCase() === mod.toLowerCase() && 
     r.submodule.toLowerCase() === sub.toLowerCase()
   );
-  return historyExisting ? (historyExisting.pass || 0) : 0;
+  if (historyExisting) {
+    const dateStr = getEntryDateString(historyExisting);
+    if (dateStr && dateStr.startsWith(currentYearMonth)) {
+      return historyExisting.pass || 0;
+    }
+    return 0;
+  }
+
+  return 0;
 }
 
 function setFormError(message) {
