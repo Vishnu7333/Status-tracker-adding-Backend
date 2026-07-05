@@ -244,6 +244,29 @@ function calculatePending() {
   }
 }
 
+function downloadCanvasAsImage(canvasId, fileName) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tempCtx = tempCanvas.getContext('2d');
+
+  tempCtx.fillStyle = '#191c24';
+  tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+  tempCtx.drawImage(canvas, 0, 0);
+
+  const imageURI = tempCanvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = imageURI;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 function getExistingPassCount() {
   const proj = projectNameInput ? projectNameInput.value.trim() : '';
   const mod = moduleInput ? moduleInput.value.trim() : '';
@@ -1437,14 +1460,15 @@ function updateHistoryTable() {
       });
     });
   });
+  updateProgressChart(recordsToRender);
 }
 
-function updateProgressChart() {
+function updateProgressChart(records = historyRecords) {
   const chartCanvas = document.getElementById('employee-progress-chart');
   if (!chartCanvas) return;
 
   const dailyData = {};
-  historyRecords.forEach(record => {
+  records.forEach(record => {
     const date = getEntryDateString(record);
     if (!date) return;
     if (!dailyData[date]) {
@@ -1515,8 +1539,8 @@ function updateProgressChart() {
           type: 'line',
           label: 'Pass Rate (%)',
           data: passRatePoints,
-          borderColor: '#4ade80',
-          backgroundColor: 'rgba(74, 222, 128, 0.15)',
+          borderColor: '#88d49e',
+          backgroundColor: 'rgba(136, 212, 158, 0.12)',
           borderWidth: 3,
           tension: 0.35,
           pointRadius: 4,
@@ -1527,8 +1551,8 @@ function updateProgressChart() {
         {
           label: 'Passed',
           data: passPoints,
-          backgroundColor: 'rgba(74, 222, 128, 0.85)',
-          borderColor: 'rgba(74, 222, 128, 1)',
+          backgroundColor: 'rgba(110, 168, 130, 0.7)',
+          borderColor: 'rgba(110, 168, 130, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1536,8 +1560,8 @@ function updateProgressChart() {
         {
           label: 'Failed',
           data: failPoints,
-          backgroundColor: 'rgba(248, 113, 113, 0.85)',
-          borderColor: 'rgba(248, 113, 113, 1)',
+          backgroundColor: 'rgba(214, 122, 122, 0.7)',
+          borderColor: 'rgba(214, 122, 122, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1545,8 +1569,8 @@ function updateProgressChart() {
         {
           label: 'On Hold',
           data: onholdPoints,
-          backgroundColor: 'rgba(245, 158, 11, 0.85)',
-          borderColor: 'rgba(245, 158, 11, 1)',
+          backgroundColor: 'rgba(224, 168, 95, 0.7)',
+          borderColor: 'rgba(224, 168, 95, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1554,8 +1578,8 @@ function updateProgressChart() {
         {
           label: 'Pending',
           data: pendingPoints,
-          backgroundColor: 'rgba(250, 204, 21, 0.85)',
-          borderColor: 'rgba(250, 204, 21, 1)',
+          backgroundColor: 'rgba(220, 206, 130, 0.7)',
+          borderColor: 'rgba(220, 206, 130, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1563,8 +1587,8 @@ function updateProgressChart() {
         {
           label: 'N/A',
           data: naPoints,
-          backgroundColor: 'rgba(167, 139, 250, 0.85)',
-          borderColor: 'rgba(167, 139, 250, 1)',
+          backgroundColor: 'rgba(148, 160, 202, 0.7)',
+          borderColor: 'rgba(148, 160, 202, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1572,8 +1596,8 @@ function updateProgressChart() {
         {
           label: 'Functional Team',
           data: functionalTeamPoints,
-          backgroundColor: 'rgba(244, 114, 182, 0.85)',
-          borderColor: 'rgba(244, 114, 182, 1)',
+          backgroundColor: 'rgba(202, 148, 172, 0.7)',
+          borderColor: 'rgba(202, 148, 172, 1)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1641,7 +1665,7 @@ function updateProgressChart() {
           max: 100,
           grid: { drawOnChartArea: false },
           ticks: {
-            color: '#4ade80',
+            color: '#88d49e',
             font: { family: 'Inter, sans-serif' },
             callback: function(value) {
               return value + '%';
@@ -1650,7 +1674,7 @@ function updateProgressChart() {
           title: {
             display: true,
             text: 'Pass Rate (%)',
-            color: '#4ade80',
+            color: '#88d49e',
             font: { family: 'Inter, sans-serif', weight: 'bold' }
           }
         }
@@ -1746,7 +1770,7 @@ async function fetchMyHistory() {
     historyRecords.length = 0;
   }
   updateHistoryTable();
-  updateProgressChart();
+}
 }
 
 async function completeProcess() {
@@ -2049,6 +2073,13 @@ function init() {
   if (exportButton) exportButton.addEventListener('click', exportSummary);
   if (exportExcelButton) exportExcelButton.addEventListener('click', downloadExcel);
   if (exportImageButton) exportImageButton.addEventListener('click', downloadStatusImage);
+
+  const downloadEmployeeChartBtn = document.getElementById('download-employee-chart');
+  if (downloadEmployeeChartBtn) {
+    downloadEmployeeChartBtn.addEventListener('click', () => {
+      downloadCanvasAsImage('employee-progress-chart', 'employee-progress-chart.png');
+    });
+  }
 
   if (projectNameInput) {
     projectNameInput.addEventListener('input', updateCustomerDisplay);
