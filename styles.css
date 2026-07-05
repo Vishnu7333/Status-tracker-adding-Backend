@@ -82,14 +82,49 @@ label {
   margin-bottom: 0;
 }
 
-input,
-select {
+input {
   width: 100%;
   padding: 0.9rem 1rem;
   border-radius: 14px;
   border: 1px solid #2d313c;
   background: #191c24;
   color: #f1f5f9;
+}
+
+select {
+  width: 100%;
+  padding: 0.9rem 2.5rem 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1e2230 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%235871f5' d='M0 0h10L5 7z'/%3E%3C/svg%3E") no-repeat right 1.1rem center;
+  background-size: 10px 7px;
+  color: #f1f5f9;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+select:hover:not(:disabled) {
+  background-color: #232838;
+  border-color: rgba(88, 113, 245, 0.5);
+  box-shadow: 0 4px 12px rgba(88, 113, 245, 0.15);
+}
+
+select:focus:not(:disabled) {
+  outline: none;
+  border-color: #5871f5;
+  box-shadow: 0 0 0 3px rgba(88, 113, 245, 0.25), 0 4px 12px rgba(88, 113, 245, 0.15);
+}
+
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%23555' d='M0 0h10L5 7z'/%3E%3C/svg%3E");
 }
 
 input.field-error-active,
@@ -740,6 +775,37 @@ td {
 }
 
 select option {
-  background-color: #191c24;
+  background-color: #1e2230;
   color: #e2e8f0;
+}
+
+/* High class select styles for admin panels */
+.admin-select {
+  width: auto;
+  min-width: 140px;
+  padding: 0.5rem 2.2rem 0.5rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(30, 38, 54, 0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath fill='%23e7ecff' d='M0 0h8L4 6z'/%3E%3C/svg%3E") no-repeat right 0.8rem center;
+  background-size: 8px 6px;
+  color: #e7ecff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.admin-select:hover {
+  background-color: rgba(45, 55, 75, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.admin-select:focus {
+  border-color: #4f7dff;
+  box-shadow: 0 0 0 2px rgba(79, 125, 255, 0.25);
 }
