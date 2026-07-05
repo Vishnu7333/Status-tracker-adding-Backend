@@ -10,6 +10,22 @@ const API_HEADERS = {
 let allEntries = [];
 let adminProgressChart = null;
 
+function getEntryDateString(recordOrEntry) {
+  if (!recordOrEntry) return '';
+  const dateVal = recordOrEntry.entryDate !== undefined ? recordOrEntry.entryDate : recordOrEntry;
+  if (!dateVal) return '';
+  if (typeof dateVal === 'string') {
+    return dateVal;
+  }
+  if (Array.isArray(dateVal)) {
+    const year = dateVal[0];
+    const month = String(dateVal[1]).padStart(2, '0');
+    const day = String(dateVal[2]).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return String(dateVal);
+}
+
 function formatDateToDdMmmYyyy(dateInput) {
   if (!dateInput) return '';
   const date = new Date(dateInput);
@@ -242,7 +258,7 @@ function updateDateFilterOptions(entries) {
   if (!select) return;
 
   // Get unique dates sorted descending
-  const dates = [...new Set(entries.map(e => e.entryDate))].sort((a, b) => b.localeCompare(a));
+  const dates = [...new Set(entries.map(e => getEntryDateString(e)))].sort((a, b) => b.localeCompare(a));
 
   const currentVal = select.value;
   select.innerHTML = '';
@@ -279,7 +295,7 @@ function renderDailySummaryForDate(selectedDate) {
     return;
   }
 
-  const filtered = allEntries.filter(e => e.entryDate === selectedDate);
+  const filtered = allEntries.filter(e => getEntryDateString(e) === selectedDate);
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No entries found for the selected date.</td></tr>`;
     return;
@@ -414,7 +430,8 @@ function updateAdminProgressChart(entries) {
 
   const dailyData = {};
   entries.forEach(entry => {
-    const date = entry.entryDate;
+    const date = getEntryDateString(entry);
+    if (!date) return;
     if (!dailyData[date]) {
       dailyData[date] = { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0, na: 0, functionalTeam: 0 };
     }
@@ -691,7 +708,10 @@ function renderDailySummaryForDateRange(fromDate, toDate) {
     return;
   }
 
-  const filtered = allEntries.filter(e => e.entryDate >= fromDate && e.entryDate <= toDate);
+  const filtered = allEntries.filter(e => {
+    const dStr = getEntryDateString(e);
+    return dStr >= fromDate && dStr <= toDate;
+  });
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No entries found for the selected date range.</td></tr>`;
     return;
@@ -764,7 +784,10 @@ function downloadDateWiseExcel() {
     return;
   }
 
-  const filtered = allEntries.filter(e => e.entryDate >= fromVal && e.entryDate <= toVal);
+  const filtered = allEntries.filter(e => {
+    const dStr = getEntryDateString(e);
+    return dStr >= fromVal && dStr <= toVal;
+  });
   if (filtered.length === 0) {
     alert("No data available for the selected range.");
     return;
@@ -855,7 +878,7 @@ function downloadDateWiseExcel() {
 
   filtered.forEach(e => {
     detailedRows.push([
-      formatDateToDdMmmYyyy(e.entryDate),
+      formatDateToDdMmmYyyy(getEntryDateString(e)),
       e.project || '',
       e.module || '',
       e.submodule || '',
@@ -1021,8 +1044,9 @@ function downloadTotalCompletionExcel() {
   let filtered = allEntries;
   if (fromVal && toVal) {
     filtered = allEntries.filter(e => {
-      if (!e.entryDate) return false;
-      const ym = e.entryDate.substring(0, 7);
+      const dStr = getEntryDateString(e);
+      if (!dStr) return false;
+      const ym = dStr.substring(0, 7);
       return ym >= fromVal && ym <= toVal;
     });
   }
@@ -1204,8 +1228,9 @@ function updateMonthFilterOptions(entries) {
 
   // Extract unique Year-Month strings (YYYY-MM)
   const months = [...new Set(entries.map(e => {
-    if (!e.entryDate) return '';
-    return e.entryDate.substring(0, 7); // "YYYY-MM"
+    const dStr = getEntryDateString(e);
+    if (!dStr) return '';
+    return dStr.substring(0, 7); // "YYYY-MM"
   }).filter(Boolean))].sort((a, b) => a.localeCompare(b)); // Sort ascending
 
   const currentFrom = fromSelect.value;
@@ -1271,8 +1296,9 @@ function renderTotalCompletionForMonthRange() {
   if (!fromVal || !toVal) return;
 
   const filtered = allEntries.filter(e => {
-    if (!e.entryDate) return false;
-    const ym = e.entryDate.substring(0, 7);
+    const dStr = getEntryDateString(e);
+    if (!dStr) return false;
+    const ym = dStr.substring(0, 7);
     return ym >= fromVal && ym <= toVal;
   });
 
@@ -1298,9 +1324,10 @@ function renderProjectTotalsMappingTable(entries) {
     const sub = e.submodule || 'N/A';
     const key = `${proj.toLowerCase()}||${mod.toLowerCase()}||${sub.toLowerCase()}`;
 
-    const entryDate = e.entryDate || '';
+    const entryDate = getEntryDateString(e);
     const current = mapping[key];
-    if (!current || entryDate.localeCompare(current.entryDate) > 0) {
+    const currentDate = current ? getEntryDateString(current) : '';
+    if (!current || entryDate.localeCompare(currentDate) > 0) {
       mapping[key] = {
         project: proj,
         module: mod,
@@ -1337,7 +1364,7 @@ function renderProjectTotalsMappingTable(entries) {
       <td style="color: rgba(231, 236, 255, 0.8);">${escapeHtml(r.submodule)}</td>
       <td style="text-align: right; font-weight: 700; color: #4ade80;">${r.total}</td>
       <td style="color: rgba(231, 236, 255, 0.7);">${escapeHtml(r.updatedBy)}</td>
-      <td style="text-align: right; color: rgba(231, 236, 255, 0.6); font-size: 0.9rem;">${formatDateToDdMmmYyyy(r.entryDate)}</td>
+      <td style="text-align: right; color: rgba(231, 236, 255, 0.6); font-size: 0.9rem;">${formatDateToDdMmmYyyy(getEntryDateString(r))}</td>
     `;
     tbody.appendChild(tr);
   });

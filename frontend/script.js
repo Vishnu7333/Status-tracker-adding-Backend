@@ -213,6 +213,37 @@ function toCount(value) {
   return Number.isFinite(number) && Number.isInteger(number) && number >= 0 ? number : 0;
 }
 
+function getEntryDateString(recordOrEntry) {
+  if (!recordOrEntry) return '';
+  const dateVal = recordOrEntry.entryDate !== undefined ? recordOrEntry.entryDate : recordOrEntry;
+  if (!dateVal) return '';
+  if (typeof dateVal === 'string') {
+    return dateVal;
+  }
+  if (Array.isArray(dateVal)) {
+    const year = dateVal[0];
+    const month = String(dateVal[1]).padStart(2, '0');
+    const day = String(dateVal[2]).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return String(dateVal);
+}
+
+function calculatePending() {
+  const totalVal = readOptionalCount(totalCountInput);
+  if (totalVal !== null && !isNaN(totalVal)) {
+    const passVal = readOptionalCount(passCountInput) ?? 0;
+    const failVal = readOptionalCount(failCountInput) ?? 0;
+    const onholdVal = readOptionalCount(onholdCountInput) ?? 0;
+    const naVal = readOptionalCount(naCountInput) ?? 0;
+    const ftVal = readOptionalCount(functionalTeamCountInput) ?? 0;
+    const pendingVal = totalVal - passVal - failVal - onholdVal - naVal - ftVal;
+    if (pendingCountInput) pendingCountInput.value = pendingVal >= 0 ? pendingVal : 0;
+  } else {
+    if (pendingCountInput) pendingCountInput.value = '';
+  }
+}
+
 function getExistingPassCount() {
   const proj = projectNameInput ? projectNameInput.value.trim() : '';
   const mod = moduleInput ? moduleInput.value.trim() : '';
@@ -395,15 +426,22 @@ function createRow(record, index) {
     <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
     <td class="comment-cell">${record.comments || '-'}</td>
     <td>
-      <button class="remove-button" data-index="${index}" data-id="${record.id}" aria-label="Remove record">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 6h18" />
-          <path d="M8 6V4h8v2" />
-          <path d="M19 6l-1 14H6L5 6" />
-          <path d="M10 11v5" />
-          <path d="M14 11v5" />
-        </svg>
-      </button>
+      <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+        <button class="edit-draft-button" data-index="${index}" title="Edit draft record" aria-label="Edit draft" style="background: none; border: none; padding: 0.35rem; cursor: pointer; color: #5871f5; display: inline-flex; align-items: center; justify-content: center; transition: opacity 0.2s;">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
+            <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </button>
+        <button class="remove-button" data-index="${index}" data-id="${record.id}" aria-label="Remove record">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            <line x1="10" y1="11" x2="10" y2="17" />
+            <line x1="14" y1="11" x2="14" y2="17" />
+          </svg>
+        </button>
+      </div>
     </td>
   `;
   return tr;
@@ -1212,17 +1250,55 @@ async function downloadExcel() {
   }
 }
 
-function removeDraftRecord(event) {
-  const button = event.target.closest('.remove-button');
-  if (!button) {
-    return;
+function editDraftRecord(index) {
+  const record = records[index];
+  if (!record) return;
+
+  if (projectNameInput) {
+    projectNameInput.value = record.project || '';
+    projectNameInput.dispatchEvent(new Event('input'));
+  }
+  if (moduleInput) {
+    populateModules(record.module || '');
+    populateSubmodules(record.module || '', record.submodule || '');
+  }
+  if (totalCountInput) totalCountInput.value = record.total !== undefined ? record.total : '';
+  if (passCountInput) passCountInput.value = record.pass !== undefined ? record.pass : '';
+  if (failCountInput) failCountInput.value = record.fail !== undefined ? record.fail : '';
+  if (onholdCountInput) onholdCountInput.value = record.onhold !== undefined ? record.onhold : '';
+  if (naCountInput) naCountInput.value = record.na !== undefined && record.na !== null ? record.na : '';
+  if (functionalTeamCountInput) functionalTeamCountInput.value = record.functionalTeam !== undefined && record.functionalTeam !== null ? record.functionalTeam : '';
+  if (commentInput) commentInput.value = record.comments || '';
+
+  calculatePending();
+  clearAllFieldErrors();
+  clearFormError();
+
+  if (projectNameInput) {
+    projectNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  const index = parseInt(button.dataset.index, 10);
-  if (!isNaN(index) && index >= 0 && index < records.length) {
-    records.splice(index, 1);
-    updateTable();
-    updateDraftSummary();
+  records.splice(index, 1);
+  updateTable();
+  updateDraftSummary();
+}
+
+function handleDraftTableClick(event) {
+  const removeBtn = event.target.closest('.remove-button');
+  const editBtn = event.target.closest('.edit-draft-button');
+
+  if (removeBtn) {
+    const index = parseInt(removeBtn.dataset.index, 10);
+    if (!isNaN(index) && index >= 0 && index < records.length) {
+      records.splice(index, 1);
+      updateTable();
+      updateDraftSummary();
+    }
+  } else if (editBtn) {
+    const index = parseInt(editBtn.dataset.index, 10);
+    if (!isNaN(index) && index >= 0 && index < records.length) {
+      editDraftRecord(index);
+    }
   }
 }
 
@@ -1271,8 +1347,9 @@ function populateHistoryMonthFilter() {
   const prevSelected = filterSelect.value;
   const monthsSet = new Set();
   historyRecords.forEach(record => {
-    if (record.entryDate) {
-      const yyyymm = record.entryDate.substring(0, 7);
+    const dateStr = getEntryDateString(record);
+    if (dateStr) {
+      const yyyymm = dateStr.substring(0, 7);
       monthsSet.add(yyyymm);
     }
   });
@@ -1310,8 +1387,9 @@ function updateHistoryTable() {
 
   const recordsToRender = historyRecords.filter(record => {
     if (selectedMonth === 'all') return true;
-    if (!record.entryDate) return false;
-    return record.entryDate.startsWith(selectedMonth);
+    const dateStr = getEntryDateString(record);
+    if (!dateStr) return false;
+    return dateStr.startsWith(selectedMonth);
   });
 
   if (!recordsToRender.length) {
@@ -1367,7 +1445,8 @@ function updateProgressChart() {
 
   const dailyData = {};
   historyRecords.forEach(record => {
-    const date = record.entryDate;
+    const date = getEntryDateString(record);
+    if (!date) return;
     if (!dailyData[date]) {
       dailyData[date] = { total: 0, pass: 0, fail: 0, onhold: 0, pending: 0, na: 0, functionalTeam: 0 };
     }
@@ -1624,8 +1703,8 @@ function retrieveHistoryRecord(id) {
   if (passCountInput) passCountInput.value = record.pass !== undefined ? record.pass : '';
   if (failCountInput) failCountInput.value = record.fail !== undefined ? record.fail : '';
   if (onholdCountInput) onholdCountInput.value = record.onhold !== undefined ? record.onhold : '';
-  if (naCountInput) naCountInput.value = record.na ? record.na : '';
-  if (functionalTeamCountInput) functionalTeamCountInput.value = record.functionalTeam ? record.functionalTeam : '';
+  if (naCountInput) naCountInput.value = record.na !== undefined && record.na !== null ? record.na : '';
+  if (functionalTeamCountInput) functionalTeamCountInput.value = record.functionalTeam !== undefined && record.functionalTeam !== null ? record.functionalTeam : '';
   if (commentInput) commentInput.value = record.comments || '';
 
   calculatePending();
@@ -1953,7 +2032,7 @@ function init() {
   }
 
   if (testcaseForm) testcaseForm.addEventListener('submit', parseTestcaseForm);
-  if (testcaseTableBody) testcaseTableBody.addEventListener('click', removeDraftRecord);
+  if (testcaseTableBody) testcaseTableBody.addEventListener('click', handleDraftTableClick);
   
   const completeBtn = document.getElementById('complete-process');
   if (completeBtn) completeBtn.addEventListener('click', completeProcess);
@@ -1976,30 +2055,11 @@ function init() {
   }
   updateCustomerDisplay();
   
-  if (pendingCountInput) {
-    pendingCountInput.readOnly = true;
-    pendingCountInput.placeholder = 'Auto-calculated';
-  }
-
-  // Dynamic fields auto-calculation of Pending count
-  function calculatePending() {
-    const totalVal = readOptionalCount(totalCountInput);
-    if (totalVal !== null && !isNaN(totalVal)) {
-      const passVal = readOptionalCount(passCountInput) ?? 0;
-      const failVal = readOptionalCount(failCountInput) ?? 0;
-      const onholdVal = readOptionalCount(onholdCountInput) ?? 0;
-      const naVal = readOptionalCount(naCountInput) ?? 0;
-      const ftVal = readOptionalCount(functionalTeamCountInput) ?? 0;
-      const pendingVal = totalVal - passVal - failVal - onholdVal - naVal - ftVal;
-      if (pendingCountInput) pendingCountInput.value = pendingVal >= 0 ? pendingVal : 0;
-    } else {
-      if (pendingCountInput) pendingCountInput.value = '';
-    }
-  }
-
   [totalCountInput, passCountInput, failCountInput, onholdCountInput, naCountInput, functionalTeamCountInput].forEach(input => {
     if (input) input.addEventListener('input', calculatePending);
   });
+
+  // Remove local calculatePending function as it has been moved to the global scope
 
 
 
@@ -2043,7 +2103,9 @@ function autoPopulateTotalCount() {
       e.module === mod &&
       e.submodule === sub
     ) {
-      if (!bestMatch || (e.entryDate && e.entryDate.localeCompare(bestMatch.entryDate) > 0)) {
+      const dateStr = getEntryDateString(e);
+      const bestMatchDateStr = getEntryDateString(bestMatch);
+      if (!bestMatch || (dateStr && dateStr.localeCompare(bestMatchDateStr) > 0)) {
         bestMatch = e;
       }
     }
