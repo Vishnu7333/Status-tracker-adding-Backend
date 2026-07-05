@@ -461,7 +461,7 @@ function createModuleHeaderRow(moduleName, moduleSummary) {
   const tr = document.createElement('tr');
   tr.className = 'module-header-row';
   tr.innerHTML = `
-    <td colspan="12">
+    <td colspan="11">
       <strong>${moduleName}</strong>
       <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Taken care by functional team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
     </td>
@@ -473,7 +473,6 @@ function createRow(record, index) {
   const status = getStatus(record);
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td>${record.module}</td>
     <td>${record.submodule}</td>
     <td>${record.total}</td>
     <td class="status-pass">${record.pass}</td>
@@ -525,7 +524,7 @@ function createProjectHeaderRow(projectName) {
   const tr = document.createElement('tr');
   tr.className = 'project-header-row-ui';
   tr.innerHTML = `
-    <td colspan="12">
+    <td colspan="11">
       <strong style="color: #ffffff; font-weight: 800;">Customer: </strong><strong style="color: #38bdf8; font-weight: 800;">${projectName}</strong>
     </td>
   `;
@@ -538,7 +537,7 @@ function updateTable() {
 
   if (!records.length) {
     const emptyRow = document.createElement('tr');
-    emptyRow.innerHTML = '<td colspan="12" class="empty-state">Add a module and submodule total to begin tracking progress.</td>';
+    emptyRow.innerHTML = '<td colspan="11" class="empty-state">Add a module and submodule total to begin tracking progress.</td>';
     testcaseTableBody.appendChild(emptyRow);
     return;
   }
@@ -695,6 +694,13 @@ async function parseTestcaseForm(event) {
   }
 
   if (values.total !== null && !isNaN(values.total)) {
+    if (values.total > 99999) {
+      if (totalCountInput) {
+        setFieldError(totalCountInput, 'Only up to 5 digits allowed.');
+        scrollToField(totalCountInput);
+      }
+      return;
+    }
     const pVal = values.pass ?? 0;
     const fVal = values.fail ?? 0;
     const ohVal = values.onhold ?? 0;
@@ -1475,8 +1481,6 @@ function createHistoryRow(record) {
   const status = getStatus(record);
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><strong>${record.project || '-'}</strong></td>
-    <td>${record.module}</td>
     <td>${record.submodule}</td>
     <td>${record.total}</td>
     <td class="status-pass">${record.pass}</td>
@@ -1563,7 +1567,7 @@ function updateHistoryTable() {
 
   if (!recordsToRender.length) {
     const emptyRow = document.createElement('tr');
-    emptyRow.innerHTML = '<td colspan="13" class="empty-state">No saved entries match the selected filter.</td>';
+    emptyRow.innerHTML = '<td colspan="11" class="empty-state">No saved entries match the selected filter.</td>';
     historyTableBody.appendChild(emptyRow);
     return;
   }
@@ -1572,7 +1576,7 @@ function updateHistoryTable() {
   Object.entries(grouped).forEach(([projectName, modules]) => {
     const projectHeader = document.createElement('tr');
     projectHeader.className = 'project-header-row-ui';
-    projectHeader.innerHTML = `<td colspan="13"><strong style="color: #ffffff; font-weight: 800;">Customer: </strong><strong style="color: #38bdf8; font-weight: 800;">${projectName}</strong></td>`;
+    projectHeader.innerHTML = `<td colspan="11"><strong style="color: #ffffff; font-weight: 800;">Customer: </strong><strong style="color: #38bdf8; font-weight: 800;">${projectName}</strong></td>`;
     historyTableBody.appendChild(projectHeader);
 
     Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
@@ -1594,7 +1598,7 @@ function updateHistoryTable() {
       moduleHeader.className = 'module-header-row';
       const status = getModuleStatus(moduleSummary);
       moduleHeader.innerHTML = `
-        <td colspan="13">
+        <td colspan="11">
           <strong>${moduleName}</strong>
           <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na ?? 0} | Taken care by functional team: ${moduleSummary.functionalTeam ?? 0} | Status: ${status}</span>
         </td>
@@ -2265,7 +2269,7 @@ function handleSwitchUser() {
   clearAllFieldErrors();
   
   if (historyTableBody) {
-    historyTableBody.innerHTML = '<td colspan="13" class="empty-state">No saved entries in the database history.</td>';
+    historyTableBody.innerHTML = '<td colspan="11" class="empty-state">No saved entries in the database history.</td>';
   }
   
   showLoginModal();

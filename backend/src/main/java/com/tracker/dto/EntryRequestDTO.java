@@ -1,5 +1,6 @@
 package com.tracker.dto;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,6 +32,7 @@ public class EntryRequestDTO {
 
     @NotNull
     @Min(0)
+    @Max(value = 99999, message = "Total sub module count cannot exceed 5 digits")
     private Integer total;
 
     @Min(0)

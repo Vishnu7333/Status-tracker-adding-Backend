@@ -71,7 +71,7 @@
 
           <label>
             <span>Total sub module count <span style="color: #f87171;">*</span></span>
-            <input id="total-count-input" type="number" min="0" step="1" placeholder="Enter total sub module count" />
+            <input id="total-count-input" type="number" min="0" max="99999" step="1" placeholder="Enter total sub module count" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5);" />
             <span class="field-error" id="total-count-input-error" aria-live="polite"></span>
           </label>
           <div class="count-grid">
@@ -161,15 +161,14 @@
         <table id="testcase-table">
           <thead>
             <tr>
-              <th>Module</th>
               <th>Submodule</th>
-              <th>Total sub module count</th>
+              <th class="wrap-header">Total sub module count</th>
               <th>Pass</th>
               <th>Fail</th>
               <th>On Hold</th>
               <th>Pending</th>
               <th>N/A</th>
-              <th>Taken care by functional team</th>
+              <th class="wrap-header">Taken care by functional team</th>
               <th>Status</th>
               <th>Comments</th>
               <th>Actions</th>
@@ -195,16 +194,14 @@
         <table id="history-table">
           <thead>
             <tr>
-              <th>Customer</th>
-              <th>Module</th>
               <th>Submodule</th>
-              <th>Total sub module count</th>
+              <th class="wrap-header">Total sub module count</th>
               <th>Pass</th>
               <th>Fail</th>
               <th>On Hold</th>
               <th>Pending</th>
               <th>N/A</th>
-              <th>Taken care by functional team</th>
+              <th class="wrap-header">Taken care by functional team</th>
               <th>Status</th>
               <th>Comments</th>
               <th>Remove</th>
