@@ -215,8 +215,20 @@ function toCount(value) {
 
 function getEntryDateString(recordOrEntry) {
   if (!recordOrEntry) return '';
-  const dateVal = recordOrEntry.entryDate !== undefined ? recordOrEntry.entryDate : recordOrEntry;
+  
+  if (typeof recordOrEntry === 'string') {
+    return recordOrEntry;
+  }
+  if (Array.isArray(recordOrEntry)) {
+    const year = recordOrEntry[0];
+    const month = String(recordOrEntry[1]).padStart(2, '0');
+    const day = String(recordOrEntry[2]).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const dateVal = recordOrEntry.entryDate;
   if (!dateVal) return '';
+
   if (typeof dateVal === 'string') {
     return dateVal;
   }
@@ -226,6 +238,7 @@ function getEntryDateString(recordOrEntry) {
     const day = String(dateVal[2]).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
+  
   return String(dateVal);
 }
 
@@ -245,26 +258,33 @@ function calculatePending() {
 }
 
 function downloadCanvasAsImage(canvasId, fileName) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
+  try {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+      console.error('Canvas element not found:', canvasId);
+      return;
+    }
 
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = canvas.width;
-  tempCanvas.height = canvas.height;
-  const tempCtx = tempCanvas.getContext('2d');
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
 
-  tempCtx.fillStyle = '#191c24';
-  tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    tempCtx.fillStyle = '#191c24';
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-  tempCtx.drawImage(canvas, 0, 0);
+    tempCtx.drawImage(canvas, 0, 0);
 
-  const imageURI = tempCanvas.toDataURL('image/png');
-  const link = document.createElement('a');
-  link.download = fileName;
-  link.href = imageURI;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    const imageURI = tempCanvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = imageURI;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Error downloading canvas as image:', error);
+  }
 }
 
 function getExistingPassCount() {
@@ -1539,8 +1559,8 @@ function updateProgressChart(records = historyRecords) {
           type: 'line',
           label: 'Pass Rate (%)',
           data: passRatePoints,
-          borderColor: '#88d49e',
-          backgroundColor: 'rgba(136, 212, 158, 0.12)',
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74, 222, 128, 0.12)',
           borderWidth: 3,
           tension: 0.35,
           pointRadius: 4,
@@ -1549,19 +1569,19 @@ function updateProgressChart(records = historyRecords) {
           zIndex: 10
         },
         {
-          label: 'Passed',
+          label: 'Pass',
           data: passPoints,
-          backgroundColor: 'rgba(110, 168, 130, 0.7)',
-          borderColor: 'rgba(110, 168, 130, 1)',
+          backgroundColor: 'rgba(74, 222, 128, 0.45)',
+          borderColor: 'rgba(74, 222, 128, 0.8)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
         },
         {
-          label: 'Failed',
+          label: 'Fail',
           data: failPoints,
-          backgroundColor: 'rgba(214, 122, 122, 0.7)',
-          borderColor: 'rgba(214, 122, 122, 1)',
+          backgroundColor: 'rgba(248, 113, 113, 0.45)',
+          borderColor: 'rgba(248, 113, 113, 0.8)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1569,8 +1589,8 @@ function updateProgressChart(records = historyRecords) {
         {
           label: 'On Hold',
           data: onholdPoints,
-          backgroundColor: 'rgba(224, 168, 95, 0.7)',
-          borderColor: 'rgba(224, 168, 95, 1)',
+          backgroundColor: 'rgba(245, 158, 11, 0.45)',
+          borderColor: 'rgba(245, 158, 11, 0.8)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1578,8 +1598,8 @@ function updateProgressChart(records = historyRecords) {
         {
           label: 'Pending',
           data: pendingPoints,
-          backgroundColor: 'rgba(220, 206, 130, 0.7)',
-          borderColor: 'rgba(220, 206, 130, 1)',
+          backgroundColor: 'rgba(250, 204, 21, 0.45)',
+          borderColor: 'rgba(250, 204, 21, 0.8)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1587,8 +1607,8 @@ function updateProgressChart(records = historyRecords) {
         {
           label: 'N/A',
           data: naPoints,
-          backgroundColor: 'rgba(148, 160, 202, 0.7)',
-          borderColor: 'rgba(148, 160, 202, 1)',
+          backgroundColor: 'rgba(167, 139, 250, 0.45)',
+          borderColor: 'rgba(167, 139, 250, 0.8)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1596,8 +1616,8 @@ function updateProgressChart(records = historyRecords) {
         {
           label: 'Functional Team',
           data: functionalTeamPoints,
-          backgroundColor: 'rgba(202, 148, 172, 0.7)',
-          borderColor: 'rgba(202, 148, 172, 1)',
+          backgroundColor: 'rgba(244, 114, 182, 0.45)',
+          borderColor: 'rgba(244, 114, 182, 0.8)',
           borderWidth: 1,
           stack: 'status',
           yAxisID: 'y'
@@ -1665,7 +1685,7 @@ function updateProgressChart(records = historyRecords) {
           max: 100,
           grid: { drawOnChartArea: false },
           ticks: {
-            color: '#88d49e',
+            color: '#4ade80',
             font: { family: 'Inter, sans-serif' },
             callback: function(value) {
               return value + '%';
@@ -1674,7 +1694,7 @@ function updateProgressChart(records = historyRecords) {
           title: {
             display: true,
             text: 'Pass Rate (%)',
-            color: '#88d49e',
+            color: '#4ade80',
             font: { family: 'Inter, sans-serif', weight: 'bold' }
           }
         }
