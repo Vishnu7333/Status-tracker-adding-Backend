@@ -1001,7 +1001,7 @@ function createImageReport() {
       headerRow.innerHTML = `
         <th>Module</th>
         <th>Submodule</th>
-        <th>Total sub module count</th>
+        <th>Total Count</th>
         <th>Pass</th>
         <th>Fail</th>
         <th>On Hold</th>
@@ -1231,7 +1231,7 @@ async function downloadExcel() {
 
       // 2. Add column headers row below the project row
       const headerRowIndex = summaryRows.length;
-      summaryRows.push(['Module', 'Submodule', 'Total sub module count', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']);
+      summaryRows.push(['Module', 'Submodule', 'Total Count', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']);
       headerRows.add(headerRowIndex);
 
       // Group this project's records by module
