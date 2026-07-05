@@ -269,7 +269,9 @@ button:hover {
   padding: 32px;
   background: #ffffff;
   color: #172033;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: normal;
+  -webkit-font-smoothing: antialiased;
 }
 
 .image-report-header {
@@ -325,7 +327,7 @@ button:hover {
   width: 100%;
   min-width: 0;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
   background: #ffffff;
 }
 
