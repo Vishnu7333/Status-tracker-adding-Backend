@@ -374,9 +374,10 @@ table {
 
 th,
 td {
-  text-align: left;
+  text-align: center;
   padding: 0.9rem 1rem;
   border-bottom: 1px solid #2d313c;
+  vertical-align: middle;
 }
 
 th {
@@ -388,12 +389,25 @@ td {
   font-size: 0.95rem;
 }
 
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+
 .comment-cell {
   max-width: 280px;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
   line-height: 1.35;
+  text-align: left;
+}
+
+.wrap-header {
+  max-width: 120px;
+  white-space: normal !important;
+  line-height: 1.25 !important;
+  word-break: break-word;
 }
 
 .module-header-row td {
