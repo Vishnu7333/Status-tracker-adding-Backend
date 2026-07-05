@@ -60,6 +60,52 @@ function validateProjectNameInput(input) {
   });
 }
 
+// Prevent entering decimal values in count/number fields
+function validateIntegerOnly(input) {
+  if (!input) return;
+
+  // 1. Prevent invalid characters from being typed
+  input.addEventListener('keydown', (e) => {
+    // Allow navigation, control keys, and digits
+    const allowedKeys = [
+      'Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 
+      'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 
+      'Home', 'End'
+    ];
+    if (allowedKeys.includes(e.key)) {
+      return;
+    }
+    // Block '.', ',', 'e', 'E', '-', '+'
+    if (['.', ',', 'e', 'E', '-', '+'].includes(e.key)) {
+      e.preventDefault();
+    }
+  });
+
+  // 2. Prevent pasting decimal or non-numeric values
+  input.addEventListener('paste', (e) => {
+    const pasteData = e.clipboardData.getData('text');
+    if (/[^0-9]/.test(pasteData)) {
+      e.preventDefault();
+      // Extract integer portion if possible
+      const parsed = parseInt(pasteData, 10);
+      if (!isNaN(parsed) && parsed >= 0) {
+        e.target.value = parsed.toString();
+        e.target.dispatchEvent(new Event('input'));
+      }
+    }
+  });
+
+  // 3. Clean up any invalid inputs (e.g. from drag & drop or auto-fill)
+  input.addEventListener('input', (e) => {
+    const value = e.target.value;
+    const filtered = value.replace(/[^0-9]/g, '');
+    if (value !== filtered) {
+      e.target.value = filtered;
+      e.target.dispatchEvent(new Event('input'));
+    }
+  });
+}
+
 const submodulesMap = {
   'FIN': ['General Ledger', 'Payables', 'Receivables', 'Fixed Assets', 'Cash Management', 'Expenses', 'Tax'],
   'HCM': ['Core HR', 'Payroll', 'Benefits', 'Talent Management', 'Learning', 'Workforce Management'],
@@ -130,6 +176,13 @@ function populateSubmodules(selectedModule, selectedValue = '') {
 
 if (projectNameInput) validateProjectNameInput(projectNameInput);
 
+if (totalCountInput) validateIntegerOnly(totalCountInput);
+if (passCountInput) validateIntegerOnly(passCountInput);
+if (failCountInput) validateIntegerOnly(failCountInput);
+if (onholdCountInput) validateIntegerOnly(onholdCountInput);
+if (naCountInput) validateIntegerOnly(naCountInput);
+if (functionalTeamCountInput) validateIntegerOnly(functionalTeamCountInput);
+
 function readOptionalCount(input) {
   const rawValue = input.value.trim();
   if (rawValue === '') {
@@ -137,12 +190,12 @@ function readOptionalCount(input) {
   }
 
   const number = Number(rawValue);
-  return Number.isFinite(number) && number >= 0 ? number : NaN;
+  return Number.isFinite(number) && Number.isInteger(number) && number >= 0 ? number : NaN;
 }
 
 function toCount(value) {
   const number = Number(value);
-  return Number.isFinite(number) && number >= 0 ? number : 0;
+  return Number.isFinite(number) && Number.isInteger(number) && number >= 0 ? number : 0;
 }
 
 function getExistingPassCount() {
@@ -769,7 +822,7 @@ function createImageReport() {
       headerRow.innerHTML = `
         <th>Module</th>
         <th>Submodule</th>
-        <th>Total</th>
+        <th>Total sub module count</th>
         <th>Pass</th>
         <th>Fail</th>
         <th>On Hold</th>
@@ -998,7 +1051,7 @@ async function downloadExcel() {
 
       // 2. Add column headers row below the project row
       const headerRowIndex = summaryRows.length;
-      summaryRows.push(['Module', 'Submodule', 'Total', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']);
+      summaryRows.push(['Module', 'Submodule', 'Total sub module count', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']);
       headerRows.add(headerRowIndex);
 
       // Group this project's records by module
