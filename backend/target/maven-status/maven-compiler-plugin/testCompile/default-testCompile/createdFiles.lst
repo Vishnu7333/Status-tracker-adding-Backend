@@ -1,8 +1,0 @@
-com\tracker\config\FakeAuthFilterTest.class
-com\tracker\controller\UserControllerTest.class
-com\tracker\controller\EntryControllerTest.class
-com\tracker\service\EntryServiceTest.class
-com\tracker\service\UserServiceTest.class
-com\tracker\StatusTrackerApplicationTests.class
-com\tracker\controller\AdminControllerTest.class
-com\tracker\exception\GlobalExceptionHandlerTest.class
