@@ -1956,6 +1956,11 @@ async function fetchMyHistory() {
       method: 'GET',
       headers: API_HEADERS
     });
+    if (response.status === 403) {
+      alert("Your account is inactive. Access denied.");
+      handleSwitchUser();
+      return;
+    }
     const result = await response.json();
     if (result && result.success && result.data) {
       historyRecords.length = 0;
@@ -2158,6 +2163,9 @@ async function updateProfileUI(name, email) {
           adminDashboardBtn.style.display = isAdmin ? 'inline-flex' : 'none';
         }
       }
+    } else if (response.status === 403) {
+      alert("Your account is inactive. Access denied.");
+      handleSwitchUser();
     }
   } catch (error) {
     console.error('Failed to fetch user profile:', error);
