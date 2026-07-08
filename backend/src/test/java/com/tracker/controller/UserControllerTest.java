@@ -63,4 +63,29 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("Unauthorized: Missing user authentication headers"));
     }
+
+    @Test
+    @WithMockUser
+    void lookupUser_WhenUserExists_ReturnsUser() throws Exception {
+        org.mockito.Mockito.when(userService.findByEmail("test@example.com")).thenReturn(testUser);
+
+        mockMvc.perform(get("/api/users/lookup")
+                        .param("email", "test@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("test@example.com"))
+                .andExpect(jsonPath("$.data.role").value("EMPLOYEE"));
+    }
+
+    @Test
+    @WithMockUser
+    void lookupUser_WhenUserDoesNotExist_ReturnsNull() throws Exception {
+        org.mockito.Mockito.when(userService.findByEmail("missing@example.com")).thenReturn(null);
+
+        mockMvc.perform(get("/api/users/lookup")
+                        .param("email", "missing@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()));
+    }
 }

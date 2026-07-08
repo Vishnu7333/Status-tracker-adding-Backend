@@ -148,4 +148,11 @@ public class UserService {
         // Delete the user
         userRepository.delete(user);
     }
+
+    @Transactional(readOnly = true)
+    public User findByEmail(String email) {
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        List<User> users = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        return users.isEmpty() ? null : users.get(0);
+    }
 }

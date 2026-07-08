@@ -2157,6 +2157,8 @@ async function updateProfileUI(name, email) {
   }
 }
 
+let emailLookupTimeout = null;
+
 function handleEmailInputForUsername() {
   const email = loginEmailInput ? loginEmailInput.value.trim().toLowerCase() : '';
   let emailToName = {};
@@ -2172,7 +2174,43 @@ function handleEmailInputForUsername() {
     if (usernameLabel) {
       usernameLabel.style.display = 'none';
     }
+    return;
+  }
+
+  if (emailLookupTimeout) {
+    clearTimeout(emailLookupTimeout);
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (emailRegex.test(email)) {
+    emailLookupTimeout = setTimeout(async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/api/users/lookup?email=${encodeURIComponent(email)}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result && result.success && result.data) {
+            const displayName = result.data.displayName;
+            if (loginUsernameInput) {
+              loginUsernameInput.value = displayName;
+            }
+            if (usernameLabel) {
+              usernameLabel.style.display = 'none';
+            }
+            emailToName[email] = displayName;
+            localStorage.setItem('emailToName', JSON.stringify(emailToName));
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Email lookup failed:', err);
+      }
+      resetUsernameInput();
+    }, 400);
   } else {
+    resetUsernameInput();
+  }
+
+  function resetUsernameInput() {
     if (usernameLabel && usernameLabel.style.display === 'none') {
       if (loginUsernameInput) {
         loginUsernameInput.value = '';
