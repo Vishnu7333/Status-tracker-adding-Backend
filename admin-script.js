@@ -451,11 +451,11 @@ function updateTotalCompletionTableUI(entries) {
       <td style="text-align: right; color: #a78bfa; font-weight: 600;">${g.na}</td>
       <td style="text-align: right; color: #f472b6; font-weight: 600;">${g.functionalTeam}</td>
       <td style="text-align: right; vertical-align: middle;">
-        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;">
-          <div style="width: 80px; height: 8px; background: #191c24; border-radius: 4px; overflow: hidden; position: relative;">
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;">
+          <div style="width: 100px; height: 8px; background: #191c24; border-radius: 4px; overflow: hidden; flex-shrink: 0; position: relative;">
             <div style="width: ${passRate}%; height: 100%; background: ${passRate >= 80 ? '#4ade80' : passRate >= 50 ? '#f59e0b' : '#f87171'}; border-radius: 4px;"></div>
           </div>
-          <span class="rate-badge ${rateClass}" style="margin: 0; min-width: 55px; text-align: right;">${passRate.toFixed(1)}%</span>
+          <span class="rate-badge ${rateClass}" style="margin: 0; width: 60px; text-align: right; display: inline-block; flex-shrink: 0;">${passRate.toFixed(1)}%</span>
         </div>
       </td>
     `;
