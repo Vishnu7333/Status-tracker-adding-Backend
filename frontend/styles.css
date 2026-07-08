@@ -865,3 +865,13 @@ select option {
   border-color: #4f7dff;
   box-shadow: 0 0 0 2px rgba(79, 125, 255, 0.2);
 }
+
+.sortable-target-total:hover {
+  color: #38bdf8 !important;
+}
+
+.sort-icon {
+  margin-left: 4px;
+  font-size: 0.8rem;
+  color: rgba(231, 236, 255, 0.4);
+}

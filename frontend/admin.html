@@ -188,18 +188,24 @@
 
     <!-- Project Submodule Target Totals Section -->
     <section class="admin-section card" style="margin-top: 2rem;">
-      <h2>Project Submodule Target Totals</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
+        <h2 style="margin: 0;">Project Submodule Target Totals</h2>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-weight: 600; font-size: 0.95rem; color: rgba(231, 236, 255, 0.8);">Search:</span>
+          <input type="text" id="target-totals-search" class="admin-select" style="min-width: 200px; background: #191c24; color: #fff; border: 1px solid #2d313c; border-radius: 10px; padding: 0.5rem 1rem;" placeholder="Filter by project, module, user...">
+        </div>
+      </div>
       <p class="form-hint" style="margin-bottom: 1rem; color: rgba(231, 236, 255, 0.7);">Latest total test cases configured for each project module and submodule.</p>
       <div class="table-container" style="overflow-x: auto;">
         <table id="project-totals-mapping-table" style="width: 100%; border-collapse: collapse; text-align: left;">
           <thead>
             <tr style="border-bottom: 2px solid #2d313c; height: 3rem;">
-              <th>Project</th>
-              <th>Module</th>
-              <th>Submodule</th>
-              <th style="text-align: right;">Target Total Test Cases</th>
-              <th>Last Updated By</th>
-              <th style="text-align: right;">Last Updated Date</th>
+              <th class="sortable-target-total" data-sort="project" style="cursor: pointer; user-select: none;">Project <span class="sort-icon">⇅</span></th>
+              <th class="sortable-target-total" data-sort="module" style="cursor: pointer; user-select: none;">Module <span class="sort-icon">⇅</span></th>
+              <th class="sortable-target-total" data-sort="submodule" style="cursor: pointer; user-select: none;">Submodule <span class="sort-icon">⇅</span></th>
+              <th class="sortable-target-total" data-sort="total" style="text-align: right; cursor: pointer; user-select: none;">Target Total Test Cases <span class="sort-icon">⇅</span></th>
+              <th class="sortable-target-total" data-sort="updatedBy" style="cursor: pointer; user-select: none;">Last Updated By <span class="sort-icon">⇅</span></th>
+              <th class="sortable-target-total" data-sort="updatedAt" style="text-align: right; cursor: pointer; user-select: none;">Last Updated Date <span class="sort-icon">⇅</span></th>
             </tr>
           </thead>
           <tbody>
