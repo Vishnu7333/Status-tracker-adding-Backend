@@ -751,7 +751,9 @@ function updateOverallSummaryUI(summary) {
   const passRate = summary.passRate !== undefined ? summary.passRate : 0;
 
   document.getElementById('overall-total').textContent = total;
-  document.getElementById('overall-passrate').textContent = `Pass Rate: ${passRate.toFixed(1)}%`;
+  if (document.getElementById('overall-passrate')) {
+    document.getElementById('overall-passrate').textContent = `Pass Rate: ${passRate.toFixed(1)}%`;
+  }
   document.getElementById('overall-pass').textContent = pass;
   document.getElementById('overall-fail').textContent = fail;
   document.getElementById('overall-onhold').textContent = onhold;
