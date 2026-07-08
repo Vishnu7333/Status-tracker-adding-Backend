@@ -283,7 +283,7 @@ class EntryServiceTest {
     void deleteEntry_WhenAuthorized_DeletesEntry() {
         when(entryRepository.findById(existingEntry.getId())).thenReturn(Optional.of(existingEntry));
 
-        assertDoesNotThrow(() -> entryService.deleteEntry(existingEntry.getId(), user.getId()));
+        assertDoesNotThrow(() -> entryService.deleteEntry(existingEntry.getId(), user.getId(), user.getRole()));
         verify(entryRepository, times(1)).delete(existingEntry);
     }
 
@@ -293,11 +293,20 @@ class EntryServiceTest {
         UUID randomUserId = UUID.randomUUID();
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
-            entryService.deleteEntry(existingEntry.getId(), randomUserId);
+            entryService.deleteEntry(existingEntry.getId(), randomUserId, Role.EMPLOYEE);
         });
 
         assertTrue(exception.getMessage().contains("Unauthorized"));
         verify(entryRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteEntry_WhenSuperAdmin_DeletesOtherUsersEntry() {
+        when(entryRepository.findById(existingEntry.getId())).thenReturn(Optional.of(existingEntry));
+        UUID superAdminUserId = UUID.randomUUID();
+
+        assertDoesNotThrow(() -> entryService.deleteEntry(existingEntry.getId(), superAdminUserId, Role.SUPER_ADMIN));
+        verify(entryRepository, times(1)).delete(existingEntry);
     }
 
     @Test

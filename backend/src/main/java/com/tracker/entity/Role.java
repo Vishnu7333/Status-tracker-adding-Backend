@@ -2,5 +2,6 @@ package com.tracker.entity;
 
 public enum Role {
     EMPLOYEE,
-    ADMIN
+    ADMIN,
+    SUPER_ADMIN
 }

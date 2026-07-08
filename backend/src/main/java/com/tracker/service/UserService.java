@@ -58,8 +58,8 @@ public class UserService {
                 user.setEmail(normalizedEmail);
                 updated = true;
             }
-            if (normalizedEmail.equals("vvnair7333@gmail.com") && user.getRole() != Role.ADMIN) {
-                user.setRole(Role.ADMIN);
+            if (normalizedEmail.equals("vvnair7333@gmail.com") && user.getRole() != Role.SUPER_ADMIN) {
+                user.setRole(Role.SUPER_ADMIN);
                 updated = true;
             }
             if (updated) {
@@ -69,7 +69,7 @@ public class UserService {
         } else {
             Role role = Role.EMPLOYEE;
             if (normalizedEmail.equals("vvnair7333@gmail.com")) {
-                role = Role.ADMIN;
+                role = Role.SUPER_ADMIN;
             }
             User newUser = User.builder()
                     .email(normalizedEmail)
@@ -99,9 +99,13 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
         try {
-            user.setRole(Role.valueOf(role.toUpperCase()));
+            Role newRole = Role.valueOf(role.toUpperCase());
+            if (newRole == Role.SUPER_ADMIN) {
+                throw new IllegalArgumentException("Cannot manually assign SUPER_ADMIN role");
+            }
+            user.setRole(newRole);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid role: " + role);
+            throw new IllegalArgumentException("Invalid role: " + role + ". " + e.getMessage());
         }
         
         return userRepository.save(user);

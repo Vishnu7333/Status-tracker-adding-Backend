@@ -89,7 +89,7 @@ class UserServiceTest {
         User result = userService.getOrCreateUser("vvnair7333@gmail.com", "Admin User");
 
         assertNotNull(result);
-        assertEquals(Role.ADMIN, result.getRole());
+        assertEquals(Role.SUPER_ADMIN, result.getRole());
         verify(userRepository, times(1)).save(existingUserWithAdminEmail);
     }
 
@@ -170,6 +170,16 @@ class UserServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> {
             userService.updateRole(userId, "INVALID_ROLE");
+        });
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void updateRole_WhenRoleIsSuperAdmin_ThrowsException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(employeeUser));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.updateRole(userId, "SUPER_ADMIN");
         });
         verify(userRepository, never()).save(any(User.class));
     }

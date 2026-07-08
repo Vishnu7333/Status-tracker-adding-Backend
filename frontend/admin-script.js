@@ -13,6 +13,7 @@ let targetTotalsData = [];
 let targetTotalsSortField = 'project';
 let targetTotalsSortAsc = true;
 let targetTotalsSearchQuery = '';
+let currentUserRole = 'EMPLOYEE';
 
 function getEntryDateString(recordOrEntry) {
   if (!recordOrEntry) return '';
@@ -147,6 +148,9 @@ async function checkAdminSession() {
   
   const emailLower = email.toLowerCase();
   const isHardcodedAdmin = emailLower === 'vvnair7333@gmail.com';
+  if (isHardcodedAdmin) {
+    currentUserRole = 'SUPER_ADMIN';
+  }
   
   try {
     const response = await fetch(`${BASE_URL}/api/users/me`, {
@@ -157,7 +161,8 @@ async function checkAdminSession() {
       const result = await response.json();
       if (result && result.success && result.data) {
         const role = result.data.role;
-        if (role !== 'ADMIN') {
+        currentUserRole = role;
+        if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
           window.location.href = 'index.html';
         }
       } else if (!isHardcodedAdmin) {
@@ -275,6 +280,19 @@ function updateUsersTableUI(users) {
     // Format Date
     const dateStr = user.createdAt ? formatDateToDdMmmYyyy(user.createdAt) : 'N/A';
 
+    let roleControlHtml = '';
+    if (role === 'SUPER_ADMIN' || email.toLowerCase() === 'vvnair7333@gmail.com') {
+      roleControlHtml = `<span class="status-badge status-pass" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">SUPER ADMIN</span>`;
+    } else {
+      const isDisabled = (currentUserRole !== 'SUPER_ADMIN') ? 'disabled' : '';
+      roleControlHtml = `
+        <select class="role-select" data-user-id="${userId}" onchange="handleRoleChange(this)" ${isDisabled}>
+          <option value="EMPLOYEE" ${role === 'EMPLOYEE' ? 'selected' : ''}>EMPLOYEE</option>
+          <option value="ADMIN" ${role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
+        </select>
+      `;
+    }
+
     const row = document.createElement('tr');
     row.style.borderBottom = '1px solid #2d313c';
     row.style.height = '3.5rem';
@@ -286,10 +304,7 @@ function updateUsersTableUI(users) {
         </div>
       </td>
       <td>
-        <select class="role-select" data-user-id="${userId}" onchange="handleRoleChange(this)">
-          <option value="EMPLOYEE" ${role === 'EMPLOYEE' ? 'selected' : ''}>EMPLOYEE</option>
-          <option value="ADMIN" ${role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
-        </select>
+        ${roleControlHtml}
       </td>
       <td style="color: rgba(231,236,255,0.7); font-size: 0.9rem;">${dateStr}</td>
       <td>

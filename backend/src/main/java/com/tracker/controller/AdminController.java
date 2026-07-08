@@ -33,8 +33,18 @@ public class AdminController {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Missing user authentication headers");
         }
-        if (user.getRole() != Role.ADMIN) {
+        if (user.getRole() != Role.ADMIN && user.getRole() != Role.SUPER_ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden: Only administrators can access this resource");
+        }
+    }
+
+    private void validateSuperAdmin(HttpServletRequest request) {
+        User user = (User) request.getAttribute("currentUser");
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Missing user authentication headers");
+        }
+        if (user.getRole() != Role.SUPER_ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden: Only Super Administrators can perform this action");
         }
     }
 
@@ -72,7 +82,7 @@ public class AdminController {
             @PathVariable UUID userId,
             @RequestBody RoleUpdateRequest roleUpdateRequest) {
         
-        validateAdmin(request);
+        validateSuperAdmin(request);
         User updatedUser = userService.updateRole(userId, roleUpdateRequest.getRole());
         
         UserResponseDTO response = UserResponseDTO.builder()

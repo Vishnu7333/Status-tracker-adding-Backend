@@ -6,6 +6,7 @@ import com.tracker.dto.SummaryDTO;
 import com.tracker.dto.UserResponseDTO;
 import com.tracker.dto.UserSummaryDTO;
 import com.tracker.entity.Entry;
+import com.tracker.entity.Role;
 import com.tracker.entity.User;
 import com.tracker.repository.EntryRepository;
 import com.tracker.repository.UserRepository;
@@ -117,10 +118,10 @@ public class EntryService {
     }
 
     @Transactional
-    public void deleteEntry(UUID entryId, UUID userId) {
+    public void deleteEntry(UUID entryId, UUID userId, Role callerRole) {
         Entry entry = entryRepository.findById(entryId)
                 .orElseThrow(() -> new RuntimeException("Entry not found"));
-        if (!entry.getUser().getId().equals(userId)) {
+        if (callerRole != Role.SUPER_ADMIN && !entry.getUser().getId().equals(userId)) {
             throw new RuntimeException("Unauthorized: Entry does not belong to this user");
         }
         entryRepository.delete(entry);

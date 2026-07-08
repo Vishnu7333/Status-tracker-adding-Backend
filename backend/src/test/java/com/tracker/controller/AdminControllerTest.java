@@ -44,6 +44,7 @@ class AdminControllerTest {
     private UserService userService;
 
     private User adminUser;
+    private User superAdminUser;
     private User regularUser;
     private UserResponseDTO userResponseDTO;
     private EntryResponseDTO entryResponseDTO;
@@ -55,6 +56,13 @@ class AdminControllerTest {
                 .email("admin@example.com")
                 .displayName("Admin User")
                 .role(Role.ADMIN)
+                .build();
+
+        superAdminUser = User.builder()
+                .id(UUID.randomUUID())
+                .email("vvnair7333@gmail.com")
+                .displayName("Super Admin User")
+                .role(Role.SUPER_ADMIN)
                 .build();
 
         regularUser = User.builder()
@@ -158,7 +166,7 @@ class AdminControllerTest {
 
     @Test
     @WithMockUser
-    void updateRole_WhenAdmin_ReturnsOk() throws Exception {
+    void updateRole_WhenSuperAdmin_ReturnsOk() throws Exception {
         UUID targetUserId = UUID.randomUUID();
         User updatedUser = User.builder()
                 .id(targetUserId)
@@ -172,12 +180,25 @@ class AdminControllerTest {
 
         mockMvc.perform(put("/api/admin/users/" + targetUserId + "/role")
                         .with(csrf())
-                        .requestAttr("currentUser", adminUser)
+                        .requestAttr("currentUser", superAdminUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"ADMIN\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.role").value("ADMIN"))
                 .andExpect(jsonPath("$.data.email").value("user@example.com"));
+    }
+
+    @Test
+    @WithMockUser
+    void updateRole_WhenAdmin_ReturnsForbidden() throws Exception {
+        UUID targetUserId = UUID.randomUUID();
+
+        mockMvc.perform(put("/api/admin/users/" + targetUserId + "/role")
+                        .with(csrf())
+                        .requestAttr("currentUser", adminUser)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"role\":\"ADMIN\"}"))
+                .andExpect(status().isForbidden());
     }
 }

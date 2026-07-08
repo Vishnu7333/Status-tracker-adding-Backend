@@ -73,7 +73,7 @@ public class EntryController {
                     .body(ApiResponse.error("Unauthorized: Missing user authentication headers"));
         }
 
-        entryService.deleteEntry(id, user.getId());
+        entryService.deleteEntry(id, user.getId(), user.getRole());
         return ResponseEntity.ok(ApiResponse.ok("Entry deleted successfully", null));
     }
 }

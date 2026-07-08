@@ -137,7 +137,7 @@ class EntryControllerTest {
     @WithMockUser
     void deleteEntry_WhenUserAuthenticated_ReturnsOk() throws Exception {
         UUID entryId = UUID.randomUUID();
-        doNothing().when(entryService).deleteEntry(eq(entryId), eq(testUser.getId()));
+        doNothing().when(entryService).deleteEntry(eq(entryId), eq(testUser.getId()), eq(testUser.getRole()));
 
         mockMvc.perform(delete("/api/entries/" + entryId)
                         .with(csrf())
