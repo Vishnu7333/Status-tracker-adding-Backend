@@ -128,6 +128,16 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
+    @DeleteMapping("/projects")
+    public ResponseEntity<ApiResponse<Void>> deleteProject(
+            HttpServletRequest request,
+            @RequestParam String name) {
+        
+        validateSuperAdmin(request);
+        entryService.deleteProjectEntries(name);
+        return ResponseEntity.ok(ApiResponse.ok("Project entries deleted successfully", null));
+    }
+
     @Data
     public static class RoleUpdateRequest {
         private String role;

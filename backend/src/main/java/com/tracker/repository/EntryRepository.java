@@ -19,4 +19,6 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
     List<Entry> findAllByOrderByEntryDateDesc();
 
     List<Entry> findByUserId(UUID userId);
+
+    List<Entry> findByProjectIgnoreCase(String project);
 }

@@ -252,4 +252,27 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.status").value("INACTIVE"));
     }
+
+    @Test
+    @WithMockUser
+    void deleteProject_WhenSuperAdmin_ReturnsOk() throws Exception {
+        doNothing().when(entryService).deleteProjectEntries("Test Project");
+
+        mockMvc.perform(delete("/api/admin/projects")
+                        .param("name", "Test Project")
+                        .with(csrf())
+                        .requestAttr("currentUser", superAdminUser))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser
+    void deleteProject_WhenAdmin_ReturnsForbidden() throws Exception {
+        mockMvc.perform(delete("/api/admin/projects")
+                        .param("name", "Test Project")
+                        .with(csrf())
+                        .requestAttr("currentUser", adminUser))
+                .andExpect(status().isForbidden());
+    }
 }

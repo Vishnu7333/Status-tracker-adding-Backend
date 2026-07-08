@@ -259,4 +259,15 @@ public class EntryService {
                 .updatedAt(entry.getUpdatedAt())
                 .build();
     }
+
+    @Transactional
+    public void deleteProjectEntries(String projectName) {
+        if (projectName == null || projectName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Project name cannot be empty");
+        }
+        List<Entry> entries = entryRepository.findByProjectIgnoreCase(projectName.trim());
+        if (entries != null && !entries.isEmpty()) {
+            entryRepository.deleteAll(entries);
+        }
+    }
 }
