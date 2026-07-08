@@ -1567,15 +1567,22 @@ function updateMonthFilterOptions(entries) {
     toSelect.appendChild(optT);
   });
 
-  // Restore or set defaults (Earliest to Latest to show everything by default)
+  const today = new Date();
+  const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+  // Restore or set defaults (Default to current month or latest month)
   if (months.includes(currentFrom)) {
     fromSelect.value = currentFrom;
+  } else if (months.includes(currentYearMonth)) {
+    fromSelect.value = currentYearMonth;
   } else {
-    fromSelect.value = months[0];
+    fromSelect.value = months[months.length - 1];
   }
 
   if (months.includes(currentTo)) {
     toSelect.value = currentTo;
+  } else if (months.includes(currentYearMonth)) {
+    toSelect.value = currentYearMonth;
   } else {
     toSelect.value = months[months.length - 1];
   }
