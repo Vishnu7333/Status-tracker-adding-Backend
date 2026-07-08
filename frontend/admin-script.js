@@ -168,8 +168,15 @@ async function checkAdminSession() {
       } else if (!isHardcodedAdmin) {
         window.location.href = 'index.html';
       }
-    } else if (!isHardcodedAdmin) {
-      window.location.href = 'index.html';
+    } else {
+      if (response.status === 403) {
+        alert("Your account is inactive. Access denied.");
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userName');
+      }
+      if (!isHardcodedAdmin) {
+        window.location.href = 'index.html';
+      }
     }
   } catch (error) {
     console.error('Failed to verify admin session:', error);
