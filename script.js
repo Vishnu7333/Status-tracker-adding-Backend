@@ -2146,7 +2146,7 @@ async function updateProfileUI(name, email) {
       const result = await response.json();
       if (result && result.success && result.data) {
         const role = result.data.role;
-        const isAdmin = (role === 'ADMIN') || isHardcodedAdmin;
+        const isAdmin = (role === 'ADMIN') || (role === 'SUPER_ADMIN') || isHardcodedAdmin;
         if (adminDashboardBtn) {
           adminDashboardBtn.style.display = isAdmin ? 'inline-flex' : 'none';
         }
