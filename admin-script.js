@@ -264,7 +264,7 @@ function updateUsersTableUI(users) {
   tbody.innerHTML = '';
 
   if (users.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No users registered in the system yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No users registered in the system yet.</td></tr>`;
     return;
   }
 
@@ -276,6 +276,7 @@ function updateUsersTableUI(users) {
     const displayName = user.displayName || 'Anonymous Developer';
     const email = user.email || 'N/A';
     const role = user.role || 'EMPLOYEE';
+    const status = user.status || 'ACTIVE';
     
     // Format Date
     const dateStr = user.createdAt ? formatDateToDdMmmYyyy(user.createdAt) : 'N/A';
@@ -290,6 +291,36 @@ function updateUsersTableUI(users) {
           <option value="EMPLOYEE" ${role === 'EMPLOYEE' ? 'selected' : ''}>EMPLOYEE</option>
           <option value="ADMIN" ${role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
         </select>
+      `;
+    }
+
+    let statusControlHtml = '';
+    if (email.toLowerCase() === 'vvnair7333@gmail.com') {
+      statusControlHtml = `<span class="status-badge status-pass">Active</span>`;
+    } else {
+      const isDisabled = (currentUserRole !== 'SUPER_ADMIN') ? 'disabled' : '';
+      statusControlHtml = `
+        <select class="role-select user-status-select" data-user-id="${userId}" onchange="handleStatusChange(this)" ${isDisabled}>
+          <option value="ACTIVE" ${status === 'ACTIVE' ? 'selected' : ''}>Active</option>
+          <option value="INACTIVE" ${status === 'INACTIVE' ? 'selected' : ''}>Inactive</option>
+        </select>
+      `;
+    }
+
+    let actionsControlHtml = '';
+    if (email.toLowerCase() === 'vvnair7333@gmail.com' || currentUserRole !== 'SUPER_ADMIN') {
+      actionsControlHtml = `<span style="color: rgba(231,236,255,0.3); font-size: 0.9rem;">-</span>`;
+    } else {
+      actionsControlHtml = `
+        <button class="remove-button delete-user-btn" onclick="handleDeleteUser('${userId}', '${escapeHtml(displayName)}')" title="Delete user and all associated entries" aria-label="Delete user">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v5" />
+            <path d="M14 11v5" />
+          </svg>
+        </button>
       `;
     }
 
@@ -308,7 +339,10 @@ function updateUsersTableUI(users) {
       </td>
       <td style="color: rgba(231,236,255,0.7); font-size: 0.9rem;">${dateStr}</td>
       <td>
-        <span class="status-badge status-pass">Active</span>
+        ${statusControlHtml}
+      </td>
+      <td style="text-align: right; padding-right: 1.5rem;">
+        ${actionsControlHtml}
       </td>
     `;
     tbody.appendChild(row);
@@ -354,6 +388,70 @@ async function handleRoleChange(select) {
 
 // Make sure handleRoleChange is globally available for inline onchange event handler
 window.handleRoleChange = handleRoleChange;
+
+async function handleStatusChange(select) {
+  const userId = select.getAttribute('data-user-id');
+  const newStatus = select.value;
+  const originalStatus = newStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  
+  const confirmMsg = `Are you sure you want to change this user's status to ${newStatus}? If INACTIVE, the user will be blocked from accessing the system.`;
+  if (!confirm(confirmMsg)) {
+    select.value = originalStatus;
+    return;
+  }
+
+  try {
+    showMessage('Updating user status...', false);
+    const response = await fetch(`${BASE_URL}/api/admin/users/${userId}/status`, {
+      method: 'PUT',
+      headers: {
+        ...API_HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    
+    const result = await response.json();
+    if (result && result.success) {
+      showMessage(`User status updated to ${newStatus} successfully!`, false);
+      setTimeout(loadDashboardData, 1500);
+    } else {
+      throw new Error(result.message || 'Failed to update user status');
+    }
+  } catch (error) {
+    console.error('Error changing status:', error);
+    showMessage(`Failed to update status: ${error.message}`, true);
+    select.value = originalStatus;
+  }
+}
+window.handleStatusChange = handleStatusChange;
+
+async function handleDeleteUser(userId, displayName) {
+  const confirmMsg = `WARNING: Are you sure you want to permanently delete user "${displayName}"? All of their draft records and saved history entries in the database will be permanently deleted as well. This action CANNOT be undone.`;
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  try {
+    showMessage('Deleting user account and associated entries...', false);
+    const response = await fetch(`${BASE_URL}/api/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: API_HEADERS
+    });
+    
+    const result = await response.json();
+    if (result && result.success) {
+      showMessage(`User "${displayName}" and all their records deleted successfully!`, false);
+      setTimeout(loadDashboardData, 1500);
+    } else {
+      throw new Error(result.message || 'Failed to delete user');
+    }
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    showMessage(`Failed to delete user: ${error.message}`, true);
+  }
+}
+window.handleDeleteUser = handleDeleteUser;
 
 function updateDateFilterOptions(entries) {
   const select = document.getElementById('admin-date-filter');
