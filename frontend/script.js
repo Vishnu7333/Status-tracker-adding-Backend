@@ -1545,8 +1545,15 @@ function populateHistoryMonthFilter() {
     filterSelect.appendChild(opt);
   });
 
+  const today = new Date();
+  const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
   if (prevSelected && Array.from(filterSelect.options).some(o => o.value === prevSelected)) {
     filterSelect.value = prevSelected;
+  } else if (Array.from(filterSelect.options).some(o => o.value === currentYearMonth)) {
+    filterSelect.value = currentYearMonth;
+  } else if (sortedMonths.length > 0) {
+    filterSelect.value = sortedMonths[0];
   } else {
     filterSelect.value = 'all';
   }
