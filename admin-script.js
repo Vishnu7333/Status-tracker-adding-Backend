@@ -453,6 +453,33 @@ async function handleDeleteUser(userId, displayName) {
 }
 window.handleDeleteUser = handleDeleteUser;
 
+async function handleDeleteProject(projectName) {
+  const confirmMsg = `WARNING: Are you sure you want to permanently delete project "${projectName}"? ALL test status entries, targets, and historical metrics associated with this project will be permanently deleted from the database. This action CANNOT be undone.`;
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  try {
+    showMessage(`Deleting project "${projectName}" and all associated metrics...`, false);
+    const response = await fetch(`${BASE_URL}/api/admin/projects?name=${encodeURIComponent(projectName)}`, {
+      method: 'DELETE',
+      headers: API_HEADERS
+    });
+    
+    const result = await response.json();
+    if (result && result.success) {
+      showMessage(`Project "${projectName}" deleted successfully!`, false);
+      setTimeout(loadDashboardData, 1500);
+    } else {
+      throw new Error(result.message || 'Failed to delete project');
+    }
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    showMessage(`Failed to delete project: ${error.message}`, true);
+  }
+}
+window.handleDeleteProject = handleDeleteProject;
+
 function updateDateFilterOptions(entries) {
   const select = document.getElementById('admin-date-filter');
   if (!select) return;
@@ -559,7 +586,7 @@ function updateTotalCompletionTableUI(entries) {
   tbody.innerHTML = '';
 
   if (entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No entry data available.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No entry data available.</td></tr>`;
     return;
   }
 
@@ -595,6 +622,23 @@ function updateTotalCompletionTableUI(entries) {
     if (passRate >= 80) rateClass = 'rate-high';
     else if (passRate >= 50) rateClass = 'rate-med';
 
+    let actionsControlHtml = '';
+    if (currentUserRole === 'SUPER_ADMIN') {
+      actionsControlHtml = `
+        <button class="remove-button delete-project-btn" onclick="handleDeleteProject('${escapeHtml(g.project)}')" title="Delete all entries for ${escapeHtml(g.project)}" aria-label="Delete project">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none;">
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v5" />
+            <path d="M14 11v5" />
+          </svg>
+        </button>
+      `;
+    } else {
+      actionsControlHtml = `<span style="color: rgba(231,236,255,0.3); font-size: 0.9rem;">-</span>`;
+    }
+
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #2d313c';
     tr.style.height = '3.5rem';
@@ -614,6 +658,9 @@ function updateTotalCompletionTableUI(entries) {
           </div>
           <span class="rate-badge ${rateClass}" style="margin: 0; width: 60px; text-align: right; display: inline-block; flex-shrink: 0;">${passRate.toFixed(1)}%</span>
         </div>
+      </td>
+      <td style="text-align: right; padding-right: 1.5rem;">
+        ${actionsControlHtml}
       </td>
     `;
     tbody.appendChild(tr);
