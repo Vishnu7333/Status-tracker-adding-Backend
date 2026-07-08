@@ -39,7 +39,7 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'ACTIVE'")
     @Builder.Default
     private String status = "ACTIVE";
 
