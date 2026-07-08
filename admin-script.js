@@ -9,6 +9,10 @@ const API_HEADERS = {
 
 let allEntries = [];
 let adminProgressChart = null;
+let targetTotalsData = [];
+let targetTotalsSortField = 'project';
+let targetTotalsSortAsc = true;
+let targetTotalsSearchQuery = '';
 
 function getEntryDateString(recordOrEntry) {
   if (!recordOrEntry) return '';
@@ -37,6 +41,46 @@ function getEntryDateString(recordOrEntry) {
   }
   
   return String(dateVal);
+}
+
+function formatDateTimeStamp(dateInput) {
+  if (!dateInput) return 'N/A';
+  let date;
+  if (Array.isArray(dateInput)) {
+    const year = dateInput[0];
+    const month = dateInput[1] - 1;
+    const day = dateInput[2];
+    const hour = dateInput[3] || 0;
+    const minute = dateInput[4] || 0;
+    const second = dateInput[5] || 0;
+    date = new Date(year, month, day, hour, minute, second);
+  } else {
+    date = new Date(dateInput);
+  }
+  if (isNaN(date.getTime())) return dateInput;
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthName = months[date.getMonth()];
+  const year = date.getFullYear();
+
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const strTime = String(hours).padStart(2, '0') + ':' + minutes + ':' + seconds + ' ' + ampm;
+
+  return `${day}-${monthName}-${year} ${strTime}`;
+}
+
+function compareUpdateDates(a, b) {
+  if (!a) return -1;
+  if (!b) return 1;
+  const timeA = new Date(Array.isArray(a) ? new Date(a[0], a[1]-1, a[2], a[3]||0, a[4]||0, a[5]||0) : a).getTime();
+  const timeB = new Date(Array.isArray(b) ? new Date(b[0], b[1]-1, b[2], b[3]||0, b[4]||0, b[5]||0) : b).getTime();
+  return timeA - timeB;
 }
 
 function downloadCanvasAsImage(canvasId, fileName) {
@@ -1419,34 +1463,80 @@ function renderProjectTotalsMappingTable(entries) {
 
     const entryDate = getEntryDateString(e);
     const current = mapping[key];
-    const currentDate = current ? getEntryDateString(current) : '';
-    if (!current || entryDate.localeCompare(currentDate) > 0) {
+    const currentUpdate = current ? current.updatedAt : '';
+    const thisUpdate = e.updatedAt || e.createdAt || entryDate;
+
+    if (!current || compareUpdateDates(thisUpdate, currentUpdate) > 0) {
       mapping[key] = {
         project: proj,
         module: mod,
         submodule: sub,
         total: e.total || 0,
         updatedBy: e.displayName || e.email || 'System',
-        entryDate: entryDate
+        updatedAt: thisUpdate
       };
     }
   });
 
-  const rows = Object.values(mapping);
-  // Sort by Project, then Module, then Submodule
+  targetTotalsData = Object.values(mapping);
+  applyAndRenderTargetTotals();
+}
+
+function applyAndRenderTargetTotals() {
+  const tbody = document.querySelector('#project-totals-mapping-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  // 1. Filter
+  let rows = [...targetTotalsData];
+  if (targetTotalsSearchQuery) {
+    const q = targetTotalsSearchQuery.toLowerCase().trim();
+    rows = rows.filter(r => 
+      r.project.toLowerCase().includes(q) ||
+      r.module.toLowerCase().includes(q) ||
+      r.submodule.toLowerCase().includes(q) ||
+      r.updatedBy.toLowerCase().includes(q)
+    );
+  }
+
+  // 2. Sort
   rows.sort((a, b) => {
-    const compProj = a.project.localeCompare(b.project);
-    if (compProj !== 0) return compProj;
-    const compMod = a.module.localeCompare(b.module);
-    if (compMod !== 0) return compMod;
-    return a.submodule.localeCompare(b.submodule);
+    let valA = a[targetTotalsSortField];
+    let valB = b[targetTotalsSortField];
+
+    if (targetTotalsSortField === 'updatedAt') {
+      return targetTotalsSortAsc ? compareUpdateDates(valA, valB) : compareUpdateDates(valB, valA);
+    }
+
+    if (typeof valA === 'string') {
+      return targetTotalsSortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    } else {
+      // number
+      return targetTotalsSortAsc ? valA - valB : valB - valA;
+    }
+  });
+
+  // Update headers sort icons
+  document.querySelectorAll('.sortable-target-total').forEach(th => {
+    const field = th.getAttribute('data-sort');
+    const iconSpan = th.querySelector('.sort-icon');
+    if (iconSpan) {
+      if (field === targetTotalsSortField) {
+        iconSpan.textContent = targetTotalsSortAsc ? ' ▲' : ' ▼';
+        iconSpan.style.color = '#38bdf8';
+      } else {
+        iconSpan.textContent = ' ⇅';
+        iconSpan.style.color = 'rgba(231, 236, 255, 0.4)';
+      }
+    }
   });
 
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No target totals configured yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No matching target configuration found.</td></tr>`;
     return;
   }
 
+  // 3. Render
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #2d313c';
@@ -1457,10 +1547,38 @@ function renderProjectTotalsMappingTable(entries) {
       <td style="color: rgba(231, 236, 255, 0.8);">${escapeHtml(r.submodule)}</td>
       <td style="text-align: right; font-weight: 700; color: #4ade80;">${r.total}</td>
       <td style="color: rgba(231, 236, 255, 0.7);">${escapeHtml(r.updatedBy)}</td>
-      <td style="text-align: right; color: rgba(231, 236, 255, 0.6); font-size: 0.9rem;">${formatDateToDdMmmYyyy(getEntryDateString(r))}</td>
+      <td style="text-align: right; color: rgba(231, 236, 255, 0.6); font-size: 0.9rem;">${formatDateTimeStamp(r.updatedAt)}</td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+function initTargetTotalsFilter() {
+  const searchInput = document.getElementById('target-totals-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      targetTotalsSearchQuery = e.target.value;
+      applyAndRenderTargetTotals();
+    });
+  }
+
+  const tableHeader = document.querySelector('#project-totals-mapping-table thead');
+  if (tableHeader) {
+    tableHeader.addEventListener('click', (e) => {
+      const th = e.target.closest('.sortable-target-total');
+      if (!th) return;
+
+      const field = th.getAttribute('data-sort');
+      if (targetTotalsSortField === field) {
+        targetTotalsSortAsc = !targetTotalsSortAsc;
+      } else {
+        targetTotalsSortField = field;
+        targetTotalsSortAsc = true;
+      }
+
+      applyAndRenderTargetTotals();
+    });
+  }
 }
 
 // Initialize the date inputs and setup custom logic
@@ -1573,4 +1691,5 @@ window.updateUsersTableUI = function(users) {
 document.addEventListener('DOMContentLoaded', () => {
   window.loadDashboardData();
   initDateRangeFilter();
+  initTargetTotalsFilter();
 });
