@@ -885,6 +885,14 @@ async function parseTestcaseForm(event) {
     moduleInput.value = '';
     populateSubmodules('');
   }
+  if (submoduleInput) {
+    submoduleInput.disabled = true;
+    submoduleInput.required = true;
+    const submoduleLabel = submoduleInput.closest('label');
+    if (submoduleLabel) {
+      submoduleLabel.style.display = 'block';
+    }
+  }
   const customContainer = document.getElementById('custom-module-container');
   const customModuleInput = document.getElementById('custom-module-name');
   const customSubmoduleInput = document.getElementById('custom-submodule-name');
@@ -2339,6 +2347,7 @@ function init() {
       const customContainer = document.getElementById('custom-module-container');
       const customModuleInput = document.getElementById('custom-module-name');
       const customSubmoduleInput = document.getElementById('custom-submodule-name');
+      const submoduleLabel = submoduleInput ? submoduleInput.closest('label') : null;
       
       if (isOthers) {
         if (customContainer) customContainer.style.display = 'flex';
@@ -2355,6 +2364,9 @@ function init() {
           submoduleInput.disabled = true;
           submoduleInput.innerHTML = '<option value="" disabled selected>Select Submodule</option>';
         }
+        if (submoduleLabel) {
+          submoduleLabel.style.display = 'none';
+        }
       } else {
         if (customContainer) customContainer.style.display = 'none';
         if (customModuleInput) {
@@ -2368,6 +2380,9 @@ function init() {
         if (submoduleInput) {
           submoduleInput.required = true;
           submoduleInput.disabled = false;
+        }
+        if (submoduleLabel) {
+          submoduleLabel.style.display = 'block';
         }
         populateSubmodules(moduleInput.value);
       }
