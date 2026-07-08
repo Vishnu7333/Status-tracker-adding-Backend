@@ -25,9 +25,11 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -200,5 +202,54 @@ class AdminControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"ADMIN\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser
+    void deleteUser_WhenSuperAdmin_ReturnsOk() throws Exception {
+        UUID targetUserId = UUID.randomUUID();
+        doNothing().when(userService).deleteUser(targetUserId);
+
+        mockMvc.perform(delete("/api/admin/users/" + targetUserId)
+                        .with(csrf())
+                        .requestAttr("currentUser", superAdminUser))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser
+    void deleteUser_WhenAdmin_ReturnsForbidden() throws Exception {
+        UUID targetUserId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/admin/users/" + targetUserId)
+                        .with(csrf())
+                        .requestAttr("currentUser", adminUser))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser
+    void updateStatus_WhenSuperAdmin_ReturnsOk() throws Exception {
+        UUID targetUserId = UUID.randomUUID();
+        User updatedUser = User.builder()
+                .id(targetUserId)
+                .email("user@example.com")
+                .displayName("Some User")
+                .role(Role.EMPLOYEE)
+                .status("INACTIVE")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        when(userService.updateStatus(eq(targetUserId), eq("INACTIVE"))).thenReturn(updatedUser);
+
+        mockMvc.perform(put("/api/admin/users/" + targetUserId + "/status")
+                        .with(csrf())
+                        .requestAttr("currentUser", superAdminUser)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"INACTIVE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("INACTIVE"));
     }
 }

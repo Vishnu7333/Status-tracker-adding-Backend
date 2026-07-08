@@ -90,6 +90,38 @@ public class AdminController {
                 .email(updatedUser.getEmail())
                 .displayName(updatedUser.getDisplayName())
                 .role(updatedUser.getRole().name())
+                .status(updatedUser.getStatus())
+                .createdAt(updatedUser.getCreatedAt())
+                .build();
+                
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            HttpServletRequest request,
+            @PathVariable UUID userId) {
+        
+        validateSuperAdmin(request);
+        userService.deleteUser(userId);
+        return ResponseEntity.ok(ApiResponse.ok("User deleted successfully", null));
+    }
+
+    @PutMapping("/users/{userId}/status")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateStatus(
+            HttpServletRequest request,
+            @PathVariable UUID userId,
+            @RequestBody StatusUpdateRequest statusUpdateRequest) {
+        
+        validateSuperAdmin(request);
+        User updatedUser = userService.updateStatus(userId, statusUpdateRequest.getStatus());
+        
+        UserResponseDTO response = UserResponseDTO.builder()
+                .id(updatedUser.getId())
+                .email(updatedUser.getEmail())
+                .displayName(updatedUser.getDisplayName())
+                .role(updatedUser.getRole().name())
+                .status(updatedUser.getStatus())
                 .createdAt(updatedUser.getCreatedAt())
                 .build();
                 
@@ -99,5 +131,10 @@ public class AdminController {
     @Data
     public static class RoleUpdateRequest {
         private String role;
+    }
+
+    @Data
+    public static class StatusUpdateRequest {
+        private String status;
     }
 }

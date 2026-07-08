@@ -30,6 +30,10 @@ public class FakeAuthFilter extends OncePerRequestFilter {
                 name = extractNameFromEmail(email);
             }
             User user = userService.getOrCreateUser(email, name);
+            if ("INACTIVE".equalsIgnoreCase(user.getStatus())) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "User account is inactive");
+                return;
+            }
             request.setAttribute("currentUser", user);
         } else {
             if (request.getAttribute("currentUser") == null) {

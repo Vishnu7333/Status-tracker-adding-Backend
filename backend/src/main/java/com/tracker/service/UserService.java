@@ -88,6 +88,7 @@ public class UserService {
                         .email(user.getEmail())
                         .displayName(user.getDisplayName())
                         .role(user.getRole().name())
+                        .status(user.getStatus())
                         .createdAt(user.getCreatedAt())
                         .build())
                 .collect(Collectors.toList());
@@ -109,5 +110,42 @@ public class UserService {
         }
         
         return userRepository.save(user);
+    }
+
+    @Transactional
+    public User updateStatus(UUID userId, String status) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        if (user.getEmail().equalsIgnoreCase("vvnair7333@gmail.com")) {
+            throw new IllegalArgumentException("Super Admin status cannot be changed");
+        }
+        
+        String upperStatus = status.toUpperCase().trim();
+        if (!"ACTIVE".equals(upperStatus) && !"INACTIVE".equals(upperStatus)) {
+            throw new IllegalArgumentException("Invalid status: " + status + ". Allowed values are ACTIVE or INACTIVE.");
+        }
+        
+        user.setStatus(upperStatus);
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public void deleteUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        if (user.getEmail().equalsIgnoreCase("vvnair7333@gmail.com")) {
+            throw new IllegalArgumentException("Super Admin cannot be deleted");
+        }
+        
+        // Delete all entries belonging to the user first
+        List<Entry> entries = entryRepository.findByUserId(userId);
+        if (entries != null && !entries.isEmpty()) {
+            entryRepository.deleteAll(entries);
+        }
+        
+        // Delete the user
+        userRepository.delete(user);
     }
 }

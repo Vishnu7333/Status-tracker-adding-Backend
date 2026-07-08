@@ -3,6 +3,7 @@ package com.tracker.service;
 import com.tracker.dto.UserResponseDTO;
 import com.tracker.entity.Role;
 import com.tracker.entity.User;
+import com.tracker.entity.Entry;
 import com.tracker.repository.UserRepository;
 import com.tracker.repository.EntryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -182,5 +183,68 @@ class UserServiceTest {
             userService.updateRole(userId, "SUPER_ADMIN");
         });
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void deleteUser_WhenAuthorized_DeletesUserAndEntries() {
+        UUID targetUserId = UUID.randomUUID();
+        User targetUser = User.builder()
+                .id(targetUserId)
+                .email("employee2@example.com")
+                .displayName("Employee 2")
+                .role(Role.EMPLOYEE)
+                .build();
+
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetUser));
+        Entry entry1 = Entry.builder().id(UUID.randomUUID()).user(targetUser).build();
+        when(entryRepository.findByUserId(targetUserId)).thenReturn(Arrays.asList(entry1));
+
+        assertDoesNotThrow(() -> userService.deleteUser(targetUserId));
+        verify(entryRepository, times(1)).deleteAll(any());
+        verify(userRepository, times(1)).delete(targetUser);
+    }
+
+    @Test
+    void deleteUser_WhenSuperAdminSelf_ThrowsException() {
+        User superAdmin = User.builder()
+                .id(UUID.randomUUID())
+                .email("vvnair7333@gmail.com")
+                .displayName("Super Admin")
+                .role(Role.SUPER_ADMIN)
+                .build();
+        when(userRepository.findById(superAdmin.getId())).thenReturn(Optional.of(superAdmin));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.deleteUser(superAdmin.getId());
+        });
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void updateStatus_WhenValid_UpdatesStatus() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(employeeUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = userService.updateStatus(userId, "INACTIVE");
+
+        assertNotNull(result);
+        assertEquals("INACTIVE", result.getStatus());
+        verify(userRepository, times(1)).save(employeeUser);
+    }
+
+    @Test
+    void updateStatus_WhenSuperAdminSelf_ThrowsException() {
+        User superAdmin = User.builder()
+                .id(UUID.randomUUID())
+                .email("vvnair7333@gmail.com")
+                .displayName("Super Admin")
+                .role(Role.SUPER_ADMIN)
+                .build();
+        when(userRepository.findById(superAdmin.getId())).thenReturn(Optional.of(superAdmin));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.updateStatus(superAdmin.getId(), "INACTIVE");
+        });
+        verify(userRepository, never()).save(any());
     }
 }
