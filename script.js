@@ -463,7 +463,7 @@ function createModuleHeaderRow(moduleName, moduleSummary) {
   tr.innerHTML = `
     <td colspan="11">
       <strong>${moduleName}</strong>
-      <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Taken care by functional team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
+      <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On-Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na || 0} | Taken care by functional team: ${moduleSummary.functionalTeam || 0} | Status: ${status}</span>
     </td>
   `;
   return tr;
@@ -969,7 +969,7 @@ function createImageReport() {
     ['Total Count', summary.total],
     ['Pass', summary.pass],
     ['Fail', summary.fail],
-    ['On Hold', summary.onhold],
+    ['On-Hold', summary.onhold],
     ['Pending', summary.pending],
     ['N/A', summary.na || 0],
     ['Taken care by functional team', summary.functionalTeam || 0],
@@ -1012,7 +1012,7 @@ function createImageReport() {
         <th>Total Count</th>
         <th>Pass</th>
         <th>Fail</th>
-        <th>On Hold</th>
+        <th>On-Hold</th>
         <th>Pending</th>
         <th>N/A</th>
         <th>Taken care by functional team</th>
@@ -1040,7 +1040,7 @@ function createImageReport() {
         moduleRow.className = 'image-report-module-row';
         const moduleCell = document.createElement('td');
         moduleCell.colSpan = 11;
-        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na ?? 0} | Taken care by functional team: ${moduleSummary.functionalTeam ?? 0} | Status: ${getModuleStatus(moduleSummary)}`;
+        moduleCell.textContent = `${moduleName} - Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On-Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na ?? 0} | Taken care by functional team: ${moduleSummary.functionalTeam ?? 0} | Status: ${getModuleStatus(moduleSummary)}`;
         moduleRow.appendChild(moduleCell);
         tbody.appendChild(moduleRow);
 
@@ -1239,7 +1239,7 @@ async function downloadExcel() {
 
       // 2. Add column headers row below the project row
       const headerRowIndex = summaryRows.length;
-      summaryRows.push(['Module', 'Submodule', 'Total Count', 'Pass', 'Fail', 'On Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']);
+      summaryRows.push(['Module', 'Submodule', 'Total Count', 'Pass', 'Fail', 'On-Hold', 'Pending', 'N/A', 'Taken care by functional team', 'Status', 'Comments']);
       headerRows.add(headerRowIndex);
 
       // Group this project's records by module
@@ -1616,7 +1616,7 @@ function updateHistoryTable() {
       moduleHeader.innerHTML = `
         <td colspan="11">
           <strong>${moduleName}</strong>
-          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na ?? 0} | Taken care by functional team: ${moduleSummary.functionalTeam ?? 0} | Status: ${status}</span>
+          <span class="module-header-meta">Total: ${moduleSummary.total} | Pass: ${moduleSummary.pass} | Fail: ${moduleSummary.fail} | On-Hold: ${moduleSummary.onhold} | Pending: ${moduleSummary.pending} | N/A: ${moduleSummary.na ?? 0} | Taken care by functional team: ${moduleSummary.functionalTeam ?? 0} | Status: ${status}</span>
         </td>
       `;
       historyTableBody.appendChild(moduleHeader);
@@ -1733,7 +1733,7 @@ function updateProgressChart(records = historyRecords) {
           yAxisID: 'y'
         },
         {
-          label: 'On Hold',
+          label: 'On-Hold',
           data: onholdPoints,
           backgroundColor: 'rgba(245, 158, 11, 0.45)',
           borderColor: 'rgba(245, 158, 11, 0.8)',
