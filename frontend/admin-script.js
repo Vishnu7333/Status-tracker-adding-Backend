@@ -834,7 +834,7 @@ function updateAdminProgressChart(entries = allEntries) {
           yAxisID: 'y'
         },
         {
-          label: 'On Hold',
+          label: 'On-Hold',
           data: onholdPoints,
           backgroundColor: 'rgba(245, 158, 11, 0.45)',
           borderColor: 'rgba(245, 158, 11, 0.8)',
@@ -1128,7 +1128,7 @@ function downloadDateWiseExcel() {
     ["Date Wise Day Progress Summary"],
     [`Range: ${formatDateToDdMmmYyyy(fromVal)} to ${formatDateToDdMmmYyyy(toVal)}`],
     [],
-    ["Project", "Total Test Cases", "Passed", "Failed", "On Hold", "Pending", "N/A", "Taken care by functional team", "Pass Rate"]
+    ["Project", "Total Test Cases", "Pass", "Fail", "On-Hold", "Pending", "N/A", "Taken care by functional team", "Pass Rate"]
   ];
 
   let totalSum = 0, passSum = 0, failSum = 0, onholdSum = 0, pendingSum = 0, naSum = 0, funcSum = 0;
@@ -1177,7 +1177,7 @@ function downloadDateWiseExcel() {
     ["Date Wise Detailed Entries Log"],
     [`Range: ${formatDateToDdMmmYyyy(fromVal)} to ${formatDateToDdMmmYyyy(toVal)}`],
     [],
-    ["Date", "Project", "Module", "Submodule", "Total", "Passed", "Failed", "On Hold", "Pending", "N/A", "Functional Team", "Status", "Comments", "Entered By"]
+    ["Date", "Project", "Module", "Submodule", "Total", "Pass", "Fail", "On-Hold", "Pending", "N/A", "Functional Team", "Status", "Comments", "Entered By"]
   ];
 
   filtered.forEach(e => {
@@ -1400,7 +1400,7 @@ function downloadTotalCompletionExcel() {
     ["Total Completion Summary Report"],
     [`Range: ${rangeStr}`],
     [],
-    ["Project", "Total Test Cases", "Passed", "Failed", "On Hold", "Pending", "N/A", "Taken care by functional team", "Completion Progress"]
+    ["Project", "Total Test Cases", "Pass", "Fail", "On-Hold", "Pending", "N/A", "Taken care by functional team", "Completion Progress"]
   ];
 
   let totalSum = 0, passSum = 0, failSum = 0, onholdSum = 0, pendingSum = 0, naSum = 0, funcSum = 0;
