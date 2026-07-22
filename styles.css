@@ -587,7 +587,7 @@ td:first-child {
 }
 
 .admin-stat-card {
-  background: #22252e;
+  background: #20232b;
   border: 1px solid #2d313c;
   border-radius: 18px;
   padding: 1.3rem;
@@ -597,6 +597,12 @@ td:first-child {
   gap: 0.4rem;
   position: relative;
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
 }
 
 .admin-stat-card::before {
@@ -609,11 +615,89 @@ td:first-child {
   background: rgba(231, 236, 255, 0.25);
 }
 
-.admin-stat-card.total-card::before { background: #5871f5; }
-.admin-stat-card.pass-card::before { background: #4ade80; }
-.admin-stat-card.fail-card::before { background: #f87171; }
-.admin-stat-card.onhold-card::before { background: #f59e0b; }
-.admin-stat-card.pending-card::before { background: #facc15; }
+/* Total Card */
+.admin-stat-card.total-card {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+.admin-stat-card.total-card .admin-stat-value {
+  color: #818cf8;
+}
+.admin-stat-card.total-card::before {
+  background: #6366f1;
+}
+
+/* Pass Card */
+.admin-stat-card.pass-card {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.admin-stat-card.pass-card .admin-stat-value {
+  color: #34d399;
+}
+.admin-stat-card.pass-card::before {
+  background: #10b981;
+}
+
+/* Fail Card */
+.admin-stat-card.fail-card {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.admin-stat-card.fail-card .admin-stat-value {
+  color: #f87171;
+}
+.admin-stat-card.fail-card::before {
+  background: #ef4444;
+}
+
+/* On Hold Card */
+.admin-stat-card.onhold-card {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.admin-stat-card.onhold-card .admin-stat-value {
+  color: #fbbf24;
+}
+.admin-stat-card.onhold-card::before {
+  background: #f59e0b;
+}
+
+/* Pending Card */
+.admin-stat-card.pending-card {
+  background: rgba(234, 179, 8, 0.06);
+  border-color: rgba(234, 179, 8, 0.2);
+}
+.admin-stat-card.pending-card .admin-stat-value {
+  color: #facc15;
+}
+.admin-stat-card.pending-card::before {
+  background: #eab308;
+}
+
+/* N/A Card */
+.admin-stat-card.na-card {
+  background: rgba(148, 163, 184, 0.06);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+.admin-stat-card.na-card .admin-stat-value {
+  color: #94a3b8;
+}
+.admin-stat-card.na-card::before {
+  background: #94a3b8;
+}
+
+/* Functional Team Card */
+.admin-stat-card.functional-card {
+  background: rgba(168, 85, 247, 0.06);
+  border-color: rgba(168, 85, 247, 0.2);
+}
+.admin-stat-card.functional-card .admin-stat-value {
+  color: #c084fc;
+}
+.admin-stat-card.functional-card::before {
+  background: #a855f7;
+}
 
 .admin-stat-label {
   font-size: 0.8rem;
