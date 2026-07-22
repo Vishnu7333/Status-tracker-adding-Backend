@@ -51,19 +51,18 @@ public class EntryService {
 
         String calculatedStatus = calculateStatus(totalVal, passVal, failVal, onholdVal, pendingVal, naVal, functionalTeamVal);
 
-        Optional<Entry> existingEntryOpt = entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(
-                user.getId(), dto.getProject(), dto.getModule(), dto.getSubmodule()
+        LocalDate targetDate = dto.getEntryDate() != null ? dto.getEntryDate() : LocalDate.now();
+        LocalDate startDate = targetDate.withDayOfMonth(1);
+        LocalDate endDate = targetDate.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+
+        Optional<Entry> existingEntryOpt = entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDateBetween(
+                user.getId(), dto.getProject(), dto.getModule(), dto.getSubmodule(), startDate, endDate
         );
 
         Entry entryToSave;
         if (existingEntryOpt.isPresent()) {
             Entry existing = existingEntryOpt.get();
-            LocalDate targetDate = dto.getEntryDate() != null ? dto.getEntryDate() : LocalDate.now();
-            boolean isNewMonth = existing.getEntryDate() == null || 
-                                 existing.getEntryDate().getYear() != targetDate.getYear() ||
-                                 existing.getEntryDate().getMonthValue() != targetDate.getMonthValue();
-
-            if (!isNewMonth && passVal < existing.getPass()) {
+            if (passVal < existing.getPass()) {
                 throw new RuntimeException("Pass count cannot be less than the previously saved count (" + existing.getPass() + ").");
             }
 
@@ -76,7 +75,7 @@ public class EntryService {
             existing.setTotal(totalVal);
             existing.setStatus(calculatedStatus);
             existing.setComments(dto.getComments());
-            existing.setEntryDate(dto.getEntryDate() != null ? dto.getEntryDate() : LocalDate.now());
+            existing.setEntryDate(targetDate);
 
             existing.setUpdatedAt(LocalDateTime.now());
             entryToSave = existing;
@@ -95,7 +94,7 @@ public class EntryService {
                     .total(totalVal)
                     .status(calculatedStatus)
                     .comments(dto.getComments())
-                    .entryDate(dto.getEntryDate() != null ? dto.getEntryDate() : LocalDate.now())
+                    .entryDate(targetDate)
                     .build();
         }
 
@@ -135,21 +134,25 @@ public class EntryService {
 
     @Transactional(readOnly = true)
     public SummaryDTO getOverallSummary() {
-        List<Entry> entries = entryRepository.findAll();
-        java.time.LocalDate now = java.time.LocalDate.now();
-        List<Entry> currentMonthEntries = entries.stream()
-                .filter(e -> e.getEntryDate() != null && 
-                             e.getEntryDate().getYear() == now.getYear() && 
-                             e.getEntryDate().getMonth() == now.getMonth())
-                .collect(Collectors.toList());
+        LocalDate now = LocalDate.now();
+        LocalDate start = now.withDayOfMonth(1);
+        LocalDate end = now.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+        List<Entry> currentMonthEntries = entryRepository.findByEntryDateBetween(start, end);
         return aggregateEntries(currentMonthEntries);
     }
 
     @Transactional(readOnly = true)
     public List<UserSummaryDTO> getPerUserSummary() {
-        return userRepository.findAll().stream()
+        List<User> users = userRepository.findAll();
+        List<Entry> allEntries = entryRepository.findAll();
+        
+        java.util.Map<UUID, List<Entry>> entriesByUser = allEntries.stream()
+                .filter(e -> e.getUser() != null)
+                .collect(Collectors.groupingBy(e -> e.getUser().getId()));
+
+        return users.stream()
                 .map(user -> {
-                    List<Entry> userEntries = entryRepository.findByUserId(user.getId());
+                    List<Entry> userEntries = entriesByUser.getOrDefault(user.getId(), java.util.Collections.emptyList());
                     SummaryDTO summary = aggregateEntries(userEntries);
 
                     LocalDate lastActive = userEntries.stream()

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -24,30 +25,9 @@ public class UserService {
     @Transactional
     public User getOrCreateUser(String email, String displayName) {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
-        List<User> users = userRepository.findByEmailIgnoreCase(normalizedEmail);
-        if (!users.isEmpty()) {
-            User user = users.get(0);
-            
-            // Clean up duplicates if any exist
-            if (users.size() > 1) {
-                for (int i = 1; i < users.size(); i++) {
-                    User duplicateUser = users.get(i);
-                    List<Entry> duplicateEntries = entryRepository.findByUserId(duplicateUser.getId());
-                    if (duplicateEntries != null && !duplicateEntries.isEmpty()) {
-                        for (Entry entry : duplicateEntries) {
-                            entry.setUser(user);
-                        }
-                        entryRepository.saveAll(duplicateEntries);
-                        entryRepository.flush();
-                    }
-                    // Temporarily rename email to avoid unique constraint violations during Hibernate update flush
-                    duplicateUser.setEmail("deleted_" + java.util.UUID.randomUUID() + "_" + duplicateUser.getEmail());
-                    userRepository.saveAndFlush(duplicateUser);
-                    
-                    userRepository.delete(duplicateUser);
-                    userRepository.flush();
-                }
-            }
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
             
             boolean updated = false;
             if (displayName != null && !displayName.trim().isEmpty() && !displayName.equals(user.getDisplayName())) {
@@ -152,7 +132,6 @@ public class UserService {
     @Transactional(readOnly = true)
     public User findByEmail(String email) {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
-        List<User> users = userRepository.findByEmailIgnoreCase(normalizedEmail);
-        return users.isEmpty() ? null : users.get(0);
+        return userRepository.findByEmailIgnoreCase(normalizedEmail).orElse(null);
     }
 }

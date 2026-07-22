@@ -86,7 +86,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenEntryDoesNotExist_CreatesNewEntry() {
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(any(), any(), any(), any()))
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDateBetween(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -104,7 +104,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenEntryExists_UpdatesExistingEntryWithNewCounts() {
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2")))
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDateBetween(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2"), any(), any()))
                 .thenReturn(Optional.of(existingEntry));
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -138,7 +138,7 @@ class EntryServiceTest {
     void statusCalculation_LogicTests() {
         // Test case: total > 0 and pass == total -> Pass
         EntryRequestDTO d1 = EntryRequestDTO.builder().total(10).pass(10).fail(0).onhold(0).pending(0).build();
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(any(), any(), any(), any())).thenReturn(Optional.empty());
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDateBetween(any(), any(), any(), any(), any(), any())).thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
         assertEquals("Pass", entryService.upsertEntry(user, d1).getStatus());
 
@@ -165,7 +165,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenTotalProvided_CalculatesPendingCountAndDefaultsNullsToZero() {
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(any(), any(), any(), any()))
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDateBetween(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -208,7 +208,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenPassCountDecreased_ThrowsRuntimeException() {
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2")))
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDateBetween(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2"), any(), any()))
                 .thenReturn(Optional.of(existingEntry));
 
         EntryRequestDTO invalidUpdateDTO = EntryRequestDTO.builder()
@@ -230,8 +230,8 @@ class EntryServiceTest {
         existingEntry.setEntryDate(LocalDate.now().minusMonths(1));
         int expectedPass = existingEntry.getPass() - 1;
 
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2")))
-                .thenReturn(Optional.of(existingEntry));
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDateBetween(eq(user.getId()), eq("Project Alpha"), eq("Authentication"), eq("OAuth2"), any(), any()))
+                .thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         EntryRequestDTO updateDTO = EntryRequestDTO.builder()
@@ -331,7 +331,7 @@ class EntryServiceTest {
     @Test
     void getOverallSummary_CalculatesGlobalSummary() {
         Entry entry1 = Entry.builder().total(5).pass(5).fail(0).onhold(0).pending(0).entryDate(LocalDate.now()).build();
-        when(entryRepository.findAll()).thenReturn(Collections.singletonList(entry1));
+        when(entryRepository.findByEntryDateBetween(any(), any())).thenReturn(Collections.singletonList(entry1));
 
         SummaryDTO summary = entryService.getOverallSummary();
 
@@ -353,8 +353,7 @@ class EntryServiceTest {
         Entry entryOther = Entry.builder().user(otherUser).total(10).pass(8).entryDate(LocalDate.now()).build();
 
         when(userRepository.findAll()).thenReturn(Arrays.asList(user, otherUser));
-        when(entryRepository.findByUserId(user.getId())).thenReturn(Collections.singletonList(entryUser));
-        when(entryRepository.findByUserId(otherUser.getId())).thenReturn(Collections.singletonList(entryOther));
+        when(entryRepository.findAll()).thenReturn(Arrays.asList(entryUser, entryOther));
 
         List<UserSummaryDTO> summaryList = entryService.getPerUserSummary();
 
@@ -378,7 +377,7 @@ class EntryServiceTest {
 
     @Test
     void upsertEntry_WhenEntryDateProvided_SavesWithProvidedDate() {
-        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmodule(any(), any(), any(), any()))
+        when(entryRepository.findByUserIdAndProjectAndModuleAndSubmoduleAndEntryDateBetween(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
