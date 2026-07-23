@@ -539,6 +539,7 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: rgba(255, 255, 255, 0.02);
+  white-space: nowrap;
 }
 
 td {
