@@ -2424,6 +2424,19 @@ function init() {
     if (input) input.addEventListener('input', calculatePending);
   });
 
+  const customModuleInput = document.getElementById('custom-module-name');
+  const customSubmoduleInput = document.getElementById('custom-submodule-name');
+  if (customModuleInput) {
+    customModuleInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^A-Za-z]/g, '');
+    });
+  }
+  if (customSubmoduleInput) {
+    customSubmoduleInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^A-Za-z]/g, '');
+    });
+  }
+
   // Remove local calculatePending function as it has been moved to the global scope
 
 
