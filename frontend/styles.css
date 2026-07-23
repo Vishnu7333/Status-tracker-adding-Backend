@@ -99,17 +99,20 @@ header p {
 }
 
 .project-name-field > span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: 0.5rem;
-  display: block;
 }
 
 .project-name-field > span span {
   display: inline;
+  line-height: 1;
 }
 
 .project-display {
