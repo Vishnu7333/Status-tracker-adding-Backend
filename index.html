@@ -62,12 +62,12 @@
           <div id="custom-module-container" style="display: none; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; width: 100%;">
             <label>
               <span>Custom Module <span style="color: #f87171;">*</span></span>
-              <input id="custom-module-name" type="text" placeholder="Enter custom module" />
+              <input id="custom-module-name" type="text" pattern="^[A-Za-z]+$" title="Only letters allowed" placeholder="Enter custom module" />
               <span class="field-error" id="custom-module-name-error" aria-live="polite"></span>
             </label>
             <label>
               <span>Custom Submodule <span style="color: #f87171;">*</span></span>
-              <input id="custom-submodule-name" type="text" placeholder="Enter custom submodule" />
+              <input id="custom-submodule-name" type="text" pattern="^[A-Za-z]+$" title="Only letters allowed" placeholder="Enter custom submodule" />
               <span class="field-error" id="custom-submodule-name-error" aria-live="polite"></span>
             </label>
           </div>
