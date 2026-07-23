@@ -998,28 +998,28 @@ function createImageReport() {
     row.appendChild(cell);
     tbody.appendChild(row);
   } else {
+    // Column Headers row once at the top
+    const tableHeaderRow = document.createElement('tr');
+    tableHeaderRow.innerHTML = `
+      <th>Module</th>
+      <th>Submodule</th>
+      <th>Total Count</th>
+      <th>Pass</th>
+      <th>Fail</th>
+      <th>On-Hold</th>
+      <th>Pending</th>
+      <th>N/A</th>
+      <th>Taken care by functional team</th>
+      <th>Status</th>
+      <th>Comments</th>
+    `;
+    tbody.appendChild(tableHeaderRow);
+
     Object.entries(groupByProjectAndModule(records)).forEach(([projectName, modules]) => {
       // 1. Project/Customer row
       const projectRow = document.createElement('tr');
       projectRow.innerHTML = `<td colspan="11" style="background: #d9e1f2; color: #1f4e79; font-weight: 800; padding: 0.7rem;">Customer: ${projectName}</td>`;
       tbody.appendChild(projectRow);
-
-      // 2. Column Headers row
-      const headerRow = document.createElement('tr');
-      headerRow.innerHTML = `
-        <th>Module</th>
-        <th>Submodule</th>
-        <th>Total Count</th>
-        <th>Pass</th>
-        <th>Fail</th>
-        <th>On-Hold</th>
-        <th>Pending</th>
-        <th>N/A</th>
-        <th>Taken care by functional team</th>
-        <th>Status</th>
-        <th>Comments</th>
-      `;
-      tbody.appendChild(headerRow);
 
       Object.entries(modules).forEach(([moduleName, moduleRecords]) => {
         const moduleSummary = moduleRecords.reduce(
@@ -1194,7 +1194,7 @@ function buildCellStyle(thinBorder, rowIndex, columnIndex, grandTotalRowIndex, p
   if (isProjectHeaderRow) {
     style.fill = { fgColor: { rgb: 'D9E1F2' } };
     style.font = { bold: true, color: { rgb: '1F4E79' }, sz: 13 };
-    style.alignment.horizontal = 'left';
+    style.alignment.horizontal = 'center';
   }
 
   if (isTitleRow || isHeaderRow || (columnIndex === 0 && !isProjectHeaderRow && !isGrandTotalRow && rowIndex > 1)) {
@@ -1338,7 +1338,7 @@ async function downloadExcel() {
           summarySheet[cellRef] = { t: 's', v: '' };
         }
         summarySheet[cellRef].s = {
-          alignment: { horizontal: c === 0 ? 'left' : 'center', vertical: 'center' },
+          alignment: { horizontal: 'center', vertical: 'center' },
           fill: { fgColor: { rgb: 'E2EFDA' } },
           font: { bold: true, color: { rgb: '375623' }, sz: 13 },
           border: thinBorder,
