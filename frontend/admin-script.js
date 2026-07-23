@@ -279,10 +279,18 @@ function updateUsersTableUI(users) {
   users.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
 
   users.forEach(user => {
-    const userId = user.id;
-    const displayName = user.displayName || 'Anonymous Developer';
     const email = user.email || 'N/A';
     const role = user.role || 'EMPLOYEE';
+
+    // Don't show the Super User / SUPER_ADMIN to other roles (e.g. ADMIN)
+    if (currentUserRole !== 'SUPER_ADMIN') {
+      if (role === 'SUPER_ADMIN' || email.toLowerCase() === 'vvnair7333@gmail.com') {
+        return;
+      }
+    }
+
+    const userId = user.id;
+    const displayName = user.displayName || 'Anonymous Developer';
     const status = user.status || 'ACTIVE';
     
     // Format Date
