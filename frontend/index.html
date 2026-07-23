@@ -12,15 +12,15 @@
 </head>
 <body>
   <header>
-    <div class="banner-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <h1 style="margin-bottom: 0.5rem; margin-top: 0;">Module Status Tracker</h1>
+    <div class="banner-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
       <div class="user-profile-display" id="user-profile" style="display: flex; align-items: center; gap: 0.5rem;">
         <span>👤 <strong id="current-user-display">John Doe</strong></span>
         <button id="switch-user-btn" class="nav-btn" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Switch User 🔄</button>
       </div>
       <a href="admin.html" id="admin-dashboard-btn" class="nav-btn admin-btn" style="display: none;">Admin Dashboard 🛡️</a>
     </div>
-    <h1 style="margin-bottom: 0.5rem; margin-top: 0;">Module Status Tracker</h1>
-    <div class="project-banner">
+    <div class="project-banner" style="margin-top: 0.5rem;">
       <label class="project-name-field">
         <span>Customer Name <span style="color: #f87171;">*</span></span>
         <input id="project-name" type="text" pattern="^(?=.*[A-Za-z])[A-Za-z .-]+$" 
